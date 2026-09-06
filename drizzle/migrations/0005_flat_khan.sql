@@ -1,0 +1,1 @@
+ALTER TABLE `stages` DROP COLUMN `places_disponibles`;

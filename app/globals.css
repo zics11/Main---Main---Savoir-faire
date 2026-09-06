@@ -1,26 +1,114 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
+/* Main à Main design tokens — reused from the legacy static site
+   (see legacy-html/): warm cream background, terracotta accent, Cormorant
+   Garamond for headings, Work Sans for body text, sharp 2px corners. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-work-sans);
+  --font-serif: var(--font-cormorant);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: #faf8f4;
+  --foreground: #2b2620;
+  --card: #ffffff;
+  --card-foreground: #2b2620;
+  --popover: #ffffff;
+  --popover-foreground: #2b2620;
+  --primary: #a3512a;
+  --primary-foreground: #faf8f4;
+  --secondary: #f5f1e8;
+  --secondary-foreground: #2b2620;
+  --muted: #f5f1e8;
+  --muted-foreground: #8a8072;
+  --accent: #f6e8de;
+  --accent-foreground: #a3512a;
+  --destructive: #a3512a;
+  --destructive-foreground: #faf8f4;
+  --success: #eef3ec;
+  --success-foreground: #4a6741;
+  --border: #e8e2d6;
+  --input: #d5cdbd;
+  --ring: #a3512a;
+  --radius: 2px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+  }
+  a {
+    @apply text-primary;
+  }
+  a:hover {
+    color: #8a4222;
+  }
+  /* Tailwind v4 ne met plus cursor:pointer sur les boutons — on le remet,
+     sinon rien ne signale au survol qu'ils sont cliquables. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary {
+    @apply cursor-pointer;
   }
 }
 
-body {
-  background: var(--background);
+/* Vignette au clic sur un point de la carte : on retire le rembourrage par
+   défaut de MapLibre pour que la photo occupe toute la largeur. */
+.vignette-transmetteur .maplibregl-popup-content {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(43 38 32 / 0.15);
+}
+.vignette-transmetteur .maplibregl-popup-close-button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--card);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1;
+  margin: 6px;
 }

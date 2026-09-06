@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Frozen reference copy of the pre-migration static site — not linted
+    // or maintained as part of the Next.js app.
+    "legacy-html/**",
+    // Vendored maplibre-gl worker bundles copied verbatim by
+    // scripts/copy-maplibre-worker.mjs (see FranceMap.tsx) — not our code.
+    "public/maplibre-gl-worker.mjs",
+    "public/maplibre-gl-shared.mjs",
   ]),
 ]);
 

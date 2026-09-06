@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+  input, textarea, select { font-family:'Work Sans',sans-serif; }
+</style>
+</helmet>
+
+<div style="min-height:100vh">
+  <header style="display:flex; align-items:center; justify-content:space-between; padding:20px 48px; border-bottom:1px solid #e8e2d6; background:#faf8f4">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <a href="Accueil.dc.html" style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; letter-spacing:0.01em; color:#2b2620">Main à Main</a>
+      <span style="font-size:12px; color:#8a8072; letter-spacing:0.12em; text-transform:uppercase">savoir-faire manuels</span>
+    </div>
+    <nav style="display:flex; gap:32px; font-size:14px; font-weight:500; align-items:center">
+      <a href="La Carte.dc.html" style="color:#8a8072">La carte</a>
+      <a href="Les Stages.dc.html" style="color:#8a8072">Les stages</a>
+      <a href="Les Transmetteurs.dc.html" style="color:#8a8072">Les transmetteurs</a>
+      <a href="#" style="color:#8a8072">L'association</a>
+    </nav>
+  </header>
+
+  <div style="max-width:1120px; margin:0 auto; padding:28px 32px 0; font-size:13px; color:#8a8072; display:flex; gap:8px">
+    <a href="Les Stages.dc.html" style="color:#8a8072">Les stages</a><span>/</span><a href="Fiche Transmetteur.dc.html" style="color:#8a8072">Le fournil de la Combe</a><span>/</span><span style="color:#2b2620">Prendre contact</span>
+  </div>
+
+  <div style="max-width:1120px; margin:0 auto; padding:20px 32px 80px; display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:56px; align-items:start">
+    <!-- Formulaire -->
+    <div>
+      <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#a3512a; margin-bottom:10px">Prendre contact</div>
+      <h1 style="font-family:'Cormorant Garamond',serif; font-size:44px; font-weight:600; margin:0 0 12px; line-height:1.06">Écrire à Élise Rouvier</h1>
+      <p style="font-size:15.5px; color:#5c554a; line-height:1.7; margin:0 0 8px; max-width:62ch; text-wrap:pretty">Main à Main ne prend aucune réservation et n'encaisse rien. Ce message part directement à Élise : vous fixez ensemble les dates et les conditions.</p>
+
+      <div style="display:flex; gap:8px; align-items:center; margin:24px 0 32px; padding:14px 18px; border:1px solid #e8e2d6; background:#f6e8de; border-radius:2px">
+        <span style="font-size:13.5px; color:#7c3d1c; line-height:1.55">Aucun paiement sur la plateforme. Si un stage est payant, le règlement se fait entre vous, sur place ou comme Élise le propose.</span>
+      </div>
+
+      <!-- Étape 1 -->
+      <section style="margin-bottom:36px">
+        <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:16px">
+          <span style="font-family:'Cormorant Garamond',serif; font-size:20px; color:#a3512a">01</span>
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; margin:0">Ce qui vous intéresse</h2>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px">
+          <sc-for list="{{ offres }}" as="o" hint-placeholder-count="4">
+            <button onClick="{{ o.onClick }}" style="text-align:left; background:#fff; border:1px solid {{ o.border }}; border-radius:2px; padding:18px 20px; cursor:pointer; display:flex; gap:16px; align-items:flex-start; font-family:'Work Sans',sans-serif">
+              <span style="width:17px; height:17px; flex-shrink:0; border-radius:50%; border:1.5px solid {{ o.border }}; background: {{ o.dot }}; box-shadow: {{ o.ring }}; margin-top:2px"></span>
+              <span style="flex:1">
+                <span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px">
+                  <span style="font-size:15px; font-weight:600">{{ o.titre }}</span>
+                  <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a; background:#f6e8de; padding:3px 8px; border-radius:2px">{{ o.type }}</span>
+                </span>
+                <span style="display:block; font-size:14px; color:#5c554a; line-height:1.55">{{ o.detail }}</span>
+              </span>
+              <span style="font-size:14px; font-weight:600; color:#a3512a; white-space:nowrap">{{ o.prix }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- Étape 2 -->
+      <section style="margin-bottom:36px">
+        <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:16px">
+          <span style="font-family:'Cormorant Garamond',serif; font-size:20px; color:#a3512a">02</span>
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; margin:0">Quand pourriez-vous venir</h2>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px">
+          <sc-for list="{{ dates }}" as="d" hint-placeholder-count="4">
+            <button onClick="{{ d.onClick }}" style="text-align:left; background: {{ d.bg }}; border:1px solid {{ d.border }}; border-radius:2px; padding:14px 16px; cursor:pointer; font-family:'Work Sans',sans-serif; display:flex; justify-content:space-between; align-items:center; gap:12px">
+              <span>
+                <span style="display:block; font-size:14.5px; font-weight:600; color: {{ d.color }}">{{ d.label }}</span>
+                <span style="display:block; font-size:12.5px; color:#8a8072; margin-top:2px">{{ d.sous }}</span>
+              </span>
+              <span style="font-size:12px; color: {{ d.placesColor }}; white-space:nowrap">{{ d.places }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer; margin-top:14px; color:#4a4438">
+          <input type="checkbox" checked="{{ souple }}" onChange="{{ onToggleSouple }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+          <span>Je suis souple sur les dates, proposez-moi autre chose</span>
+        </label>
+      </section>
+
+      <!-- Étape 3 -->
+      <section style="margin-bottom:36px">
+        <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:16px">
+          <span style="font-family:'Cormorant Garamond',serif; font-size:20px; color:#a3512a">03</span>
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; margin:0">Qui vous êtes</h2>
+        </div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-bottom:14px">
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">Prénom et nom</span>
+            <input type="text" placeholder="Camille Berthier" style="border:1px solid #d5cdbd; border-radius:2px; padding:12px 13px; font-size:14.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">Courriel</span>
+            <input type="email" placeholder="camille@exemple.fr" style="border:1px solid #d5cdbd; border-radius:2px; padding:12px 13px; font-size:14.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">Téléphone (optionnel)</span>
+            <input type="tel" placeholder="06 12 34 56 78" style="border:1px solid #d5cdbd; border-radius:2px; padding:12px 13px; font-size:14.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">D'où venez-vous</span>
+            <input type="text" placeholder="Lyon (69)" style="border:1px solid #d5cdbd; border-radius:2px; padding:12px 13px; font-size:14.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+          </label>
+        </div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px">
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">Votre niveau</span>
+            <select style="border:1px solid #d5cdbd; border-radius:2px; padding:12px 13px; font-size:14.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              <option>Grand débutant</option>
+              <option>J'ai déjà essayé chez moi</option>
+              <option>Je pratique régulièrement</option>
+              <option>Professionnel en reconversion</option>
+            </select>
+          </label>
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">Nombre de personnes</span>
+            <div style="display:flex; align-items:center; gap:10px; border:1px solid #d5cdbd; border-radius:2px; padding:7px 10px; background:#fff">
+              <button onClick="{{ onMoinsPersonnes }}" style="width:32px; height:32px; flex-shrink:0; border:1px solid #dcd4c4; background:#faf8f4; border-radius:2px; font-size:17px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">−</button>
+              <span style="flex:1; text-align:center; font-size:14.5px; font-weight:600">{{ personnesLabel }}</span>
+              <button onClick="{{ onPlusPersonnes }}" style="width:32px; height:32px; flex-shrink:0; border:1px solid #dcd4c4; background:#faf8f4; border-radius:2px; font-size:17px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">+</button>
+            </div>
+            <span style="font-size:12.5px; color: {{ personnesNoteColor }}">{{ personnesNote }}</span>
+          </div>
+        </div>
+        <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer; margin-top:14px; color:#4a4438">
+          <input type="checkbox" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+          <span>J'aurais besoin d'un hébergement sur place</span>
+        </label>
+      </section>
+
+      <!-- Étape 4 -->
+      <section>
+        <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:16px">
+          <span style="font-family:'Cormorant Garamond',serif; font-size:20px; color:#a3512a">04</span>
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; margin:0">Votre message</h2>
+        </div>
+        <p style="font-size:14px; color:#8a8072; margin:0 0 12px">Dites en quelques lignes pourquoi ce savoir-faire vous attire. C'est ce qui donne envie de répondre.</p>
+        <textarea placeholder="Bonjour Élise, je pétris chez moi depuis deux ans et je bloque sur la conduite du four…" style="width:100%; box-sizing:border-box; height:140px; border:1px solid #d5cdbd; border-radius:2px; padding:14px; font-size:14.5px; background:#fff; color:#2b2620; resize:vertical; line-height:1.6"></textarea>
+        <div style="display:flex; align-items:center; gap:16px; margin-top:20px; flex-wrap:wrap">
+          <button onClick="{{ onSend }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15.5px; font-weight:500; padding:15px 32px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Envoyer à Élise</button>
+          <span style="font-size:13px; color:#8a8072">Élise répond en général sous 3 jours.</span>
+        </div>
+        <sc-if value="{{ envoye }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:20px; border:1px solid #c6d3c2; background:#eef3ec; border-radius:2px; padding:18px 20px">
+            <div style="font-size:15px; font-weight:600; margin-bottom:4px">Message envoyé à Élise</div>
+            <div style="font-size:14px; color:#4a5a46; line-height:1.6">Vous recevrez sa réponse par courriel. Rien n'est réservé pour l'instant : c'est votre échange qui décidera de la suite.</div>
+          </div>
+        </sc-if>
+      </section>
+    </div>
+
+    <!-- Récapitulatif -->
+    <aside style="display:flex; flex-direction:column; gap:16px; position:sticky; top:24px">
+      <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; overflow:hidden">
+        <div style="height:150px">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="contact-fournil" shape="rect" placeholder="photo : le fournil" hint-size="100%,150px" style="width:100%; height:100%"></x-import>
+        </div>
+        <div style="padding:20px 22px">
+          <div style="font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; line-height:1.2">Le fournil de la Combe</div>
+          <div style="font-size:13.5px; color:#8a8072; margin-top:4px">Élise Rouvier · Saint-Julien-du-Serre, Ardèche (07)</div>
+          <a href="Fiche Transmetteur.dc.html" style="display:inline-block; font-size:13.5px; font-weight:600; margin-top:12px">Revoir la fiche →</a>
+        </div>
+      </div>
+
+      <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+        <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 16px; font-weight:600">Votre demande</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:14px">
+          <div style="display:flex; justify-content:space-between; gap:14px"><span style="color:#8a8072">Formule</span><span style="font-weight:500; text-align:right">{{ resumeOffre }}</span></div>
+          <div style="display:flex; justify-content:space-between; gap:14px"><span style="color:#8a8072">Dates</span><span style="font-weight:500; text-align:right">{{ resumeDate }}</span></div>
+          <div style="display:flex; justify-content:space-between; gap:14px"><span style="color:#8a8072">Personnes</span><span style="font-weight:500; text-align:right">{{ personnesLabel }}</span></div>
+          <div style="display:flex; justify-content:space-between; gap:14px; border-top:1px solid #f0ebe1; padding-top:12px"><span style="color:#8a8072">Contrepartie</span><span style="font-weight:600; text-align:right; color:#a3512a">{{ resumePrix }}</span></div>
+          <div style="font-size:12.5px; color:#8a8072; line-height:1.5">{{ resumeDetailPrix }}</div>
+        </div>
+        <div style="font-size:12.5px; color:#8a8072; line-height:1.55; margin-top:14px">Ce récapitulatif accompagne votre message. Rien n'est engagé avant la réponse d'Élise.</div>
+      </div>
+
+      <div style="border:1px solid #e8e2d6; background:#f5f1e8; border-radius:2px; padding:22px">
+        <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 12px; font-weight:600">Comment ça se passe ensuite</h3>
+        <div style="display:flex; flex-direction:column; gap:12px">
+          <sc-for list="{{ suite }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; gap:11px; align-items:flex-start">
+              <span style="font-family:'Cormorant Garamond',serif; font-size:15px; color:#a3512a; line-height:1.4">{{ s.num }}</span>
+              <span style="font-size:13.5px; color:#4a4438; line-height:1.6">{{ s.texte }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="border-top:1px solid #e8e2d6; padding:32px 48px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#8a8072">
+    <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:#2b2620">Main à Main</span>
+    <span>Association loi 1901 — jamais de commission sur les stages</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const OFFRES = [
+  { id: "stage", titre: "Une fournée de A à Z", type: "Stage payant", detail: "2 jours au fournil, farine et repas compris.", prix: "180 €" },
+  { id: "immersion", titre: "Immersion au fournil", type: "Aide bénévole", detail: "1 semaine, logé en yourte, repas partagés. Esprit WWOOF.", prix: "Gratuit" },
+  { id: "echange", titre: "Échange de savoir-faire", type: "Échange", detail: "Je transmets le pain, vous transmettez votre pratique.", prix: "Troc" },
+  { id: "portes", titre: "Fournée portes ouvertes", type: "Gratuit", detail: "Un samedi par mois, sans inscription.", prix: "Libre" },
+];
+const DATES = [
+  { id: "aout-8", label: "8–9 août", sous: "Stage · 2 jours", places: "2 places", complet: false },
+  { id: "aout-22", label: "22 août", sous: "Portes ouvertes · 1 jour", places: "Ouvert à tous", complet: false },
+  { id: "sept-14", label: "14–18 septembre", sous: "Immersion · 1 semaine", places: "1 place", complet: false },
+  { id: "oct-3", label: "3–4 octobre", sous: "Stage · 2 jours", places: "Complet", complet: true },
+];
+
+class Component extends DCLogic {
+  state = { offre: "stage", date: "aout-8", souple: false, envoye: false, personnes: 1 };
+
+  renderVals() {
+    const s = this.state;
+    const offre = OFFRES.find((o) => o.id === s.offre);
+    const date = DATES.find((d) => d.id === s.date);
+    const n = s.personnes;
+    const placesLibres = { "aout-8": 2, "aout-22": 20, "sept-14": 1, "oct-3": 0 }[s.date];
+    const trop = !s.souple && placesLibres !== undefined && n > placesLibres;
+    const prixNum = { stage: 180 }[s.offre];
+    return {
+      personnes: n,
+      personnesLabel: n === 1 ? "Je viens seul·e" : n + " personnes",
+      personnesNote: trop
+        ? "Il ne reste que " + placesLibres + (placesLibres > 1 ? " places" : " place") + " sur cette date — Élise vous dira si c'est possible."
+        : n === 1 ? "Vous pouvez venir accompagné·e : ajustez le nombre." : "Précisez qui vous accompagne dans le message.",
+      personnesNoteColor: trop ? "#a3512a" : "#8a8072",
+      onPlusPersonnes: () => this.setState({ personnes: Math.min(8, n + 1) }),
+      onMoinsPersonnes: () => this.setState({ personnes: Math.max(1, n - 1) }),
+      resumeDetailPrix: prixNum
+        ? (n > 1 ? prixNum + " € × " + n + " personnes = " + prixNum * n + " € au total" : "180 € pour une personne")
+        : "À convenir directement avec Élise.",
+      envoye: s.envoye,
+      souple: s.souple,
+      onToggleSouple: () => this.setState({ souple: !s.souple }),
+      onSend: () => this.setState({ envoye: true }),
+      resumeOffre: offre ? offre.titre : "À préciser",
+      resumeDate: s.souple ? "Souple, à convenir" : (date ? date.label : "À convenir"),
+      resumePrix: offre ? offre.prix : "—",
+      offres: OFFRES.map((o) => {
+        const on = o.id === s.offre;
+        return Object.assign({}, o, {
+          border: on ? "#a3512a" : "#e8e2d6",
+          dot: on ? "#a3512a" : "transparent",
+          ring: on ? "inset 0 0 0 2px #fff" : "none",
+          onClick: () => this.setState({ offre: o.id }),
+        });
+      }),
+      dates: DATES.map((d) => {
+        const on = d.id === s.date && !d.complet;
+        return Object.assign({}, d, {
+          bg: on ? "#f6e8de" : "#fff",
+          border: on ? "#a3512a" : "#e8e2d6",
+          color: d.complet ? "#8a8072" : "#2b2620",
+          placesColor: d.complet ? "#8a8072" : "#4a6741",
+          onClick: () => { if (!d.complet) this.setState({ date: d.id }); },
+        });
+      }),
+      suite: [
+        { num: "I", texte: "Élise reçoit votre message et vous répond directement par courriel." },
+        { num: "II", texte: "Vous convenez ensemble des dates, du prix ou de l'échange, et de l'hébergement." },
+        { num: "III", texte: "Le règlement, s'il y en a un, se fait entre vous. Main à Main ne prélève rien." },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Main à Main
 
-## Getting Started
+Plateforme de mise en relation entre transmetteurs de savoir-faire manuels et
+personnes qui veulent apprendre. Gratuite, sans commission, sans compte pour
+les visiteurs.
 
-First, run the development server:
+Migré depuis une maquette HTML/CSS/JS statique (conservée pour référence dans
+[`legacy-html/`](./legacy-html)) vers Next.js.
+
+## Stack
+
+- Next.js 16 (App Router, TypeScript, Turbopack)
+- Tailwind CSS v4 + shadcn/ui
+- SQLite (fichier unique) via `better-sqlite3` + Drizzle ORM
+- Auth.js v5 — connexion par lien magique par email uniquement (SMTP Brevo)
+- MapLibre GL JS + tuiles CARTO (gratuites, sans clé) + `supercluster`
+- `sharp` pour la conversion/redimensionnement des photos uploadées
+
+## Démarrage local
+
+Node **22.13+** est requis (voir `.nvmrc` — `nvm use`). Sur certaines
+versions de Node plus anciennes, le binaire natif de `better-sqlite3` peut
+planter (segfault) au chargement : si `npm run dev` crashe immédiatement,
+vérifiez d'abord votre version de Node.
 
 ```bash
+npm install
+cp .env.example .env.local   # puis renseigner AUTH_SECRET (npx auth secret) et SMTP_*
+npm run db:migrate           # crée data/main-a-main.db et applique le schéma
+npm run db:seed              # optionnel : recharge le contenu de démonstration
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Le site est sur http://localhost:3000. `/admin` et `/mes-stages` nécessitent
+une session — voir plus bas pour créer un premier compte admin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Créer le premier compte admin
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Il n'y a pas d'interface d'inscription : le premier admin doit être inséré
+directement en base (les suivants peuvent être créés depuis l'admin).
 
-## Learn More
+```bash
+node -e "
+const { randomUUID } = require('crypto');
+const Database = require('better-sqlite3');
+const db = new Database('./data/main-a-main.db');
+db.prepare('INSERT INTO users (id, email, role) VALUES (?, ?, ?)')
+  .run(randomUUID(), 'vous@exemple.fr', 'admin');
+"
+```
 
-To learn more about Next.js, take a look at the following resources:
+Puis connectez-vous sur `/connexion` avec cette adresse : un lien de
+connexion est envoyé par email (il faut donc que `SMTP_*` soit configuré,
+même en local — un compte Brevo gratuit suffit).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Commande | Effet |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm run build` / `npm run start` | Build + démarrage en production |
+| `npm run lint` | ESLint |
+| `npm run db:generate` | Génère une migration Drizzle à partir de `lib/db/schema.ts` |
+| `npm run db:migrate` | Applique les migrations (`drizzle/migrations/`) |
+| `npm run db:seed` | Recharge les données de démonstration (reprises du site HTML d'origine) |
+| `npm run db:studio` | Ouvre Drizzle Studio sur la base locale |
 
-## Deploy on Vercel
+## Déploiement (Docker)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Conteneur unique, sans reverse proxy (à mettre en place côté serveur).
+SQLite et les photos uploadées vivent dans deux volumes Docker nommés.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cp .env.example .env   # AUTH_SECRET, AUTH_URL (URL publique du site), SMTP_*
+docker compose up -d --build
+```
+
+Les migrations sont appliquées automatiquement au démarrage du conteneur
+(voir `Dockerfile` / `CMD`).
+
+### Sauvegardes
+
+`scripts/backup.sh` archive les deux volumes (`main-a-main_data`,
+`main-a-main_uploads`) dans une tarball datée. À brancher sur une tâche cron
+du serveur hôte :
+
+```bash
+0 3 * * * /chemin/vers/main-a-main/scripts/backup.sh >> /var/log/main-a-main-backup.log 2>&1
+```
+
+## Structure
+
+```
+app/                  routes (App Router)
+  admin/               back-office (rôle admin)
+  mes-stages/          espace transmetteur (stages uniquement)
+  fiche/[slug]/         fiche publique d'un transmetteur
+  connexion/           connexion par lien magique
+lib/
+  db/schema.ts         schéma Drizzle
+  auth.ts              config Auth.js
+  dal.ts               vérifications d'accès côté serveur (admin / transmetteur)
+  upload.ts            validation + redimensionnement des photos
+components/
+  map/                 carte MapLibre + clustering
+  admin/, mes-stages/  formulaires spécifiques à chaque espace
+drizzle/migrations/    migrations SQL versionnées
+scripts/               migration, seed, backup
+```

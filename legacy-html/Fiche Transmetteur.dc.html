@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+</style>
+</helmet>
+
+<div style="min-height:100vh">
+  <!-- Nav -->
+  <header style="display:flex; align-items:center; justify-content:space-between; padding:20px 48px; border-bottom:1px solid #e8e2d6; background:#faf8f4; position:sticky; top:0; z-index:10">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <span style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; letter-spacing:0.01em">Main à Main</span>
+      <span style="font-size:12px; color:#8a8072; letter-spacing:0.12em; text-transform:uppercase">savoir-faire manuels</span>
+    </div>
+    <nav style="display:flex; gap:32px; font-size:14px; font-weight:500; align-items:center">
+      <a href="La Carte.dc.html" style="color:#8a8072">La carte</a>
+      <a href="Les Stages.dc.html" style="color:#8a8072">Les stages</a>
+      <a href="Les Transmetteurs.dc.html" style="color:#8a8072">Les transmetteurs</a>
+      <a href="#" style="color:#8a8072">L'association</a>
+      <a href="#" style="border:1px solid #a3512a; padding:8px 18px; border-radius:2px; color:#a3512a">Proposer une transmission</a>
+    </nav>
+  </header>
+
+  <!-- Breadcrumb -->
+  <div style="max-width:1120px; margin:0 auto; padding:28px 32px 0; font-size:13px; color:#8a8072; display:flex; gap:8px">
+    <a href="#" style="color:#8a8072">Carte</a><span>/</span><a href="#" style="color:#8a8072">Alimentation</a><span>/</span><span style="color:#2b2620">Pain au levain</span>
+  </div>
+
+  <!-- Title block -->
+  <div style="max-width:1120px; margin:0 auto; padding:20px 32px 36px; display:flex; justify-content:space-between; align-items:flex-end; gap:32px; flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a5a2b; margin-bottom:10px">Alimentation · Pain au levain</div>
+      <h1 style="font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:600; margin:0 0 12px; line-height:1.05">Le fournil de la Combe</h1>
+      <div style="font-size:15px; color:#5c554a; display:flex; align-items:center; gap:14px">
+        <span>Élise Rouvier, paysanne-boulangère</span>
+        <span style="color:#d5cdbd">|</span>
+        <span>Saint-Julien-du-Serre, Ardèche (07)</span>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px">
+      <button onClick="{{ onContact }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:500; padding:14px 28px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Contacter Élise</button>
+    </div>
+  </div>
+
+  <!-- Photo strip -->
+  <div style="max-width:1120px; margin:0 auto; padding:0 32px; display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr); gap:12px; height:380px">
+    <div style="height:380px; min-width:0; overflow:hidden">
+      <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="fiche-photo-1" shape="rect" placeholder="photo : le fournil" hint-size="100%,380px" style="width:100%; height:100%"></x-import>
+    </div>
+    <div style="height:380px; min-width:0; overflow:hidden">
+      <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="fiche-photo-2" shape="rect" placeholder="photo : les pains" hint-size="100%,380px" style="width:100%; height:100%"></x-import>
+    </div>
+    <div style="height:380px; min-width:0; overflow:hidden">
+      <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="fiche-photo-3" shape="rect" placeholder="photo : le four" hint-size="100%,380px" style="width:100%; height:100%"></x-import>
+    </div>
+  </div>
+
+  <!-- Main columns -->
+  <div style="max-width:1120px; margin:0 auto; padding:48px 32px 80px; display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:64px; align-items:start">
+    <div>
+      <!-- Présentation -->
+      <section>
+        <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#8a5a2b; margin-bottom:8px">LA TRANSMISSION</div>
+        <h2 style="font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin:0 0 16px">Ce qu'Élise transmet</h2>
+        <p style="font-size:16px; line-height:1.7; color:#4a4438; margin:0 0 14px; text-wrap:pretty">Paysanne-boulangère depuis quinze ans, je cultive mes blés anciens, les mouds à la meule de pierre et cuis au four à bois. Je transmets l'ensemble de la chaîne : de l'entretien du levain jusqu'à la cuisson, en passant par le pétrissage à la main et la conduite du four.</p>
+        <p style="font-size:16px; line-height:1.7; color:#4a4438; margin:0; text-wrap:pretty">On travaille ensemble, aux vraies heures du fournil. Vous repartez en sachant mener une fournée seul·e : rafraîchi du levain, façonnage, apprêt, enfournement.</p>
+      </section>
+
+      <!-- Les stages -->
+      <section style="margin-top:48px; border-top:1px solid #e8e2d6; padding-top:40px">
+        <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#8a5a2b; margin-bottom:8px">CE QUI EST PROPOSÉ</div>
+        <h2 style="font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin:0 0 6px">Les stages et leurs dates</h2>
+        <p style="font-size:14px; color:#8a8072; margin:0 0 24px">Chaque stage a son programme et ses dates. Les places indiquées sont celles qu'Élise tient à jour.</p>
+
+        <div style="display:flex; flex-direction:column; gap:24px">
+          <sc-for list="{{ stages }}" as="st" hint-placeholder-count="3">
+            <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px">
+              <div style="padding:22px 24px">
+                <div style="display:grid; grid-template-columns:110px minmax(0,1fr); gap:18px; align-items:start">
+                  <div style="height:92px; min-width:0; overflow:hidden; border:1px solid #e8e2d6; border-radius:2px">
+                    <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ st.slotId }}" shape="rect" placeholder="{{ st.placeholder }}" hint-size="100%,92px" style="width:100%; height:100%"></x-import>
+                  </div>
+                  <div style="min-width:0">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; min-width:0">
+                      <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a; background:#f6e8de; padding:4px 9px; border-radius:2px">{{ st.type }}</span>
+                      <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#5c554a; border:1px solid #dcd4c4; padding:4px 9px; border-radius:2px">{{ st.niveau }}</span>
+                      <span style="font-size:13px; color:#8a8072">{{ st.duree }}</span>
+                      <span style="font-size:14px; font-weight:600; color:#a3512a">· {{ st.prix }}</span>
+                    </div>
+                    <div style="font-family:'Cormorant Garamond',serif; font-size:25px; font-weight:600; line-height:1.2">{{ st.titre }}</div>
+                  </div>
+                </div>
+                <p style="font-size:15px; color:#4a4438; line-height:1.65; margin:14px 0 0; text-wrap:pretty">{{ st.description }}</p>
+              </div>
+
+              <div style="padding:18px 24px; background:#faf8f4; border-top:1px solid #f0ebe1; border-bottom:1px solid #f0ebe1">
+                <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#8a8072; font-weight:600; margin-bottom:12px">Le programme de la journée</div>
+                <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px 28px">
+                  <sc-for list="{{ st.programme }}" as="p" hint-placeholder-count="4">
+                    <div style="display:flex; gap:12px; align-items:baseline">
+                      <span style="width:44px; flex-shrink:0; font-size:13px; font-weight:600; color:#a3512a; font-variant-numeric:tabular-nums">{{ p.heure }}</span>
+                      <span style="font-size:14px; color:#4a4438; line-height:1.5">{{ p.titre }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="padding:8px 24px 18px">
+                <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#8a8072; font-weight:600; margin:12px 0 6px">Dates</div>
+                <div style="display:flex; flex-direction:column">
+                  <sc-for list="{{ st.dates }}" as="d" hint-placeholder-count="2">
+                    <div style="display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid #f6f2e9">
+                      <div style="flex:1; min-width:0">
+                        <div style="font-size:14px; font-weight:600">{{ d.label }}</div>
+                        <div style="font-size:13px; color: {{ d.placesColor }}; margin-top:2px">{{ d.places }}</div>
+                      </div>
+                      <button onClick="{{ st.onContact }}" disabled="{{ d.complet }}" style="flex-shrink:0; border:1px solid {{ d.btnBorder }}; background: {{ d.btnBg }}; color: {{ d.btnColor }}; font-family:'Work Sans',sans-serif; font-size:13px; font-weight:600; padding:9px 14px; border-radius:2px; cursor: {{ d.btnCursor }}; white-space:nowrap">{{ d.btnLabel }}</button>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-size:12.5px; color:#8a8072; margin-top:12px">{{ st.note }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Sidebar -->
+    <aside style="display:flex; flex-direction:column; gap:16px">
+      <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px">
+        <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 18px; font-weight:600">Infos pratiques</h3>
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <sc-for list="{{ infos }}" as="i" hint-placeholder-count="2">
+            <div style="display:flex; gap:11px; align-items:flex-start">
+              <span dangerouslySetInnerHTML="{{ i.icon }}" style="flex-shrink:0; width:18px; height:18px; color:#a3512a; margin-top:1px"></span>
+              <div style="min-width:0">
+                <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#8a8072; margin-bottom:3px">{{ i.label }}</div>
+                <div style="font-size:14px; font-weight:500; line-height:1.5">{{ i.valeur }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border-top:1px solid #f0ebe1; margin-top:18px; padding-top:16px">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#8a8072; margin-bottom:6px">Autres infos</div>
+          <p style="font-size:14px; color:#4a4438; line-height:1.6; margin:0; text-wrap:pretty">Accueil de mars à novembre. Prévoyez des chaussures fermées et un tablier. Chiens bienvenus s'ils s'entendent avec les miens.</p>
+        </div>
+      </div>
+
+      <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; overflow:hidden">
+        <svg viewBox="0 0 100 62" preserveAspectRatio="none" style="width:100%; height:170px; display:block; background:repeating-linear-gradient(45deg,#ece6da,#ece6da 12px,#e5ded0 12px,#e5ded0 24px)"><circle cx="50" cy="31" r="4" fill="#8a5a2b"></circle><text x="50" y="48" text-anchor="middle" font-family="monospace" font-size="5" fill="#8a8072">carte : Ardèche</text></svg>
+        <div style="padding:16px 20px; font-size:14px">
+          <div style="font-weight:500">Saint-Julien-du-Serre, Ardèche (07)</div>
+          <div style="color:#8a8072; font-size:13px; margin-top:4px; line-height:1.5">Adresse exacte communiquée après contact.<br>Gare d'Aubenas à 6 km — Élise vient vous chercher.</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px">
+        <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">La transmettrice</h3>
+        <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px">
+          <svg viewBox="0 0 100 100" style="width:56px; height:56px; border-radius:50%; flex-shrink:0; background:repeating-linear-gradient(45deg,#ece6da,#ece6da 8px,#e5ded0 8px,#e5ded0 16px)"><text x="50" y="56" text-anchor="middle" font-family="monospace" font-size="16" fill="#8a8072">É.R.</text></svg>
+          <div>
+            <div style="font-size:15px; font-weight:600">Élise Rouvier</div>
+            <div style="font-size:13px; color:#8a8072">Sur Main à Main depuis 2025</div>
+          </div>
+        </div>
+        <p style="font-size:14px; line-height:1.6; color:#5c554a; margin:0 0 16px">Répond en général sous 3 jours. Préfère un premier échange par écrit.</p>
+        <button onClick="{{ onContact }}" style="width:100%; background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:500; padding:13px 0; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Contacter Élise</button>
+        <div style="font-size:12px; color:#8a8072; text-align:center; margin-top:10px">Mise en relation directe — sans commission</div>
+      </div>
+
+      <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px">
+        <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 18px; font-weight:600">Ils sont passés par le fournil</h3>
+        <div style="display:flex; flex-direction:column; gap:20px">
+          <sc-for list="{{ avis }}" as="a" hint-placeholder-count="3">
+            <figure style="margin:0; border-left:2px solid #dcc9ae; padding:2px 0 2px 16px">
+              <blockquote style="margin:0 0 8px; font-size:14px; line-height:1.65; color:#4a4438; font-style:italic">« {{ a.texte }} »</blockquote>
+              <figcaption style="font-size:12.5px; color:#8a8072">{{ a.auteur }} — {{ a.contexte }}</figcaption>
+            </figure>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Footer -->
+  <footer style="border-top:1px solid #e8e2d6; padding:32px 48px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#8a8072">
+    <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:#2b2620">Main à Main</span>
+    <span>Association loi 1901 — transmettre les savoir-faire manuels</span>
+  </footer>
+
+  <sc-if value="{{ contactOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseContact }}" style="position:fixed; inset:0; background:rgba(43,38,32,0.5); display:flex; align-items:center; justify-content:center; z-index:50">
+      <div onClick="{{ stop }}" style="background:#faf8f4; border-radius:2px; padding:36px; width:440px; max-width:90vw">
+        <h3 style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; margin:0 0 8px">Écrire à Élise</h3>
+        <p style="font-size:14px; color:#5c554a; line-height:1.6; margin:0 0 20px">Présentez-vous et dites ce que vous cherchez à apprendre. Vous vous arrangez ensuite directement entre vous.</p>
+        <textarea placeholder="Bonjour Élise, je souhaite apprendre à…" style="width:100%; box-sizing:border-box; height:120px; border:1px solid #d5cdbd; border-radius:2px; padding:12px; font-family:'Work Sans',sans-serif; font-size:14px; background:#fff; resize:vertical"></textarea>
+        <div style="display:flex; gap:12px; margin-top:16px">
+          <button onClick="{{ onCloseContact }}" style="flex:1; background:none; border:1px solid #d5cdbd; font-family:'Work Sans',sans-serif; font-size:14px; padding:12px 0; border-radius:2px; cursor:pointer; color:#5c554a">Annuler</button>
+          <button onClick="{{ onCloseContact }}" style="flex:1; background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:12px 0; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Envoyer</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STAGES = [
+  {
+    id: "fournee", niveau: "Débutant bienvenu", type: "Stage payant", titre: "Une fournée de A à Z", duree: "2 jours", prix: "180 € / pers.",
+    description: "Deux jours au fournil : entretien du levain, pétrissage à la main, façonnage et conduite du four à bois. Vous repartez capable de mener une fournée seul·e.",
+    note: "Farine, repas et pain à emporter compris. 4 personnes maximum.",
+    programme: [
+      { heure: "7 h", titre: "Rafraîchi du levain" },
+      { heure: "9 h", titre: "Pétrissage à la main" },
+      { heure: "12 h", titre: "Repas partagé" },
+      { heure: "14 h", titre: "Façonnage et apprêt" },
+      { heure: "17 h", titre: "Conduite du four à bois" },
+      { heure: "19 h", titre: "Défournement" },
+    ],
+    dates: [
+      { label: "8–9 août", places: 4, inscrits: 2 },
+      { label: "3–4 octobre", places: 4, inscrits: 4 },
+    ],
+  },
+  {
+    id: "immersion", niveau: "Quelques bases utiles", type: "Immersion · aide bénévole", titre: "Immersion au fournil", duree: "1 semaine", prix: "Échange",
+    description: "Une semaine à mes côtés, aux vraies heures du fournil, contre logement en yourte et repas partagés. Esprit WWOOF : on apprend en travaillant ensemble.",
+    note: "Logé en yourte, repas partagés. Une seule personne à la fois.",
+    programme: [
+      { heure: "6 h", titre: "Levain et allumage du four" },
+      { heure: "8 h", titre: "Fournée du jour" },
+      { heure: "13 h", titre: "Repas et sieste" },
+      { heure: "16 h", titre: "Travaux du fournil, meunerie" },
+      { heure: "18 h", titre: "Préparation du lendemain" },
+    ],
+    dates: [
+      { label: "14–18 sept.", places: 2, inscrits: 1 },
+      { label: "12–16 oct.", places: 2, inscrits: 0 },
+    ],
+  },
+  {
+    id: "portes", niveau: "Tout public", type: "Portes ouvertes", titre: "Fournée portes ouvertes", duree: "1 jour", prix: "Participation libre",
+    description: "Un samedi par mois, le fournil est ouvert : venez voir tourner une fournée, poser vos questions et goûter le pain sorti du four.",
+    note: "Sans inscription pour les visiteurs. Prévenez si vous venez en groupe.",
+    programme: [
+      { heure: "9 h", titre: "Accueil, visite du fournil" },
+      { heure: "10 h", titre: "Démonstration de façonnage" },
+      { heure: "11 h", titre: "Enfournement au four à bois" },
+      { heure: "12 h", titre: "Dégustation et discussion" },
+    ],
+    dates: [
+      { label: "22 août", places: 20, inscrits: 7 },
+      { label: "26 septembre", places: 20, inscrits: 3 },
+    ],
+  },
+  {
+    id: "echange", niveau: "Intermédiaire", type: "Échange de savoir-faire", titre: "Troc de gestes", duree: "2 à 4 jours", prix: "Troc",
+    description: "Vous savez greffer, forger, maçonner ? Je transmets le pain, vous transmettez votre pratique. On se met d'accord sur la durée avant de venir.",
+    note: "Dates à convenir librement, hors saison de moisson.",
+    programme: [
+      { heure: "Matin", titre: "Vous au fournil avec moi" },
+      { heure: "Après-midi", titre: "Moi à votre atelier" },
+      { heure: "Soir", titre: "Repas et bilan de la journée" },
+    ],
+    dates: [
+      { label: "Sur demande", places: 2, inscrits: 0 },
+    ],
+  },
+];
+
+class Component extends DCLogic {
+  state = { contactOpen: false };
+  svg(inner) {
+    return { __html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>' };
+  }
+  renderVals() {
+    return {
+      contactOpen: this.state.contactOpen,
+      onContact: () => this.setState({ contactOpen: true }),
+      onCloseContact: () => this.setState({ contactOpen: false }),
+      stop: (e) => e.stopPropagation(),
+      infos: [
+        { label: "Hébergement sur place", valeur: "Yourte de 4 places, à 50 m du fournil", icon: this.svg('<path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/>') },
+        { label: "Repas", valeur: "Repas partagés, produits de la ferme, végétariens sur demande", icon: this.svg('<path d="M4 3v7"/><path d="M7 3v7"/><path d="M5.5 10v11"/><path d="M17 3c-2 2-2.5 5-2.5 8h5c0-3-.5-6-2.5-8z"/><path d="M17 11v10"/>') },
+      ],
+      stages: STAGES.map((st) => Object.assign({}, st, {
+        slotId: "fiche-stage-" + st.id,
+        placeholder: "photo : " + st.titre,
+        onContact: () => this.setState({ contactOpen: true }),
+        dates: st.dates.map((d) => {
+          const restant = Math.max(0, d.places - d.inscrits);
+          const complet = restant === 0;
+          return {
+            label: d.label,
+            complet: complet,
+            places: complet ? "Complet" : restant + (restant > 1 ? " places libres" : " place libre") + " / " + d.places,
+            placesColor: complet ? "#8a8072" : "#4a6741",
+            btnLabel: complet ? "Complet" : "Demander",
+            btnBg: complet ? "#f0ebe1" : "#a3512a",
+            btnColor: complet ? "#8a8072" : "#faf8f4",
+            btnBorder: complet ? "#e2dbcb" : "#a3512a",
+            btnCursor: complet ? "default" : "pointer",
+          };
+        }),
+      })),
+      avis: [
+        { texte: "Une semaine en immersion : j'ai appris plus qu'en un an de livres. Élise explique avec les mains, on comprend avec le corps.", auteur: "Thomas", contexte: "mai 2026" },
+        { texte: "Le stage de deux jours m'a débloquée sur le levain. Six mois après, je cuis toutes mes miches au four communal du village.", auteur: "Nadia", contexte: "octobre 2025" },
+        { texte: "Accueil chaleureux, les mains dans la pâte dès la première heure.", auteur: "Camille", contexte: "avril 2026" },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

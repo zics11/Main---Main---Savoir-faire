@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+</style>
+</helmet>
+
+<div style="min-height:100vh">
+  <header style="display:flex; align-items:center; justify-content:space-between; padding:20px 48px; border-bottom:1px solid #e8e2d6; background:#faf8f4; position:sticky; top:0; z-index:10">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <a href="Accueil.dc.html" style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; letter-spacing:0.01em; color:#2b2620">Main à Main</a>
+      <span style="font-size:12px; color:#8a8072; letter-spacing:0.12em; text-transform:uppercase">savoir-faire manuels</span>
+    </div>
+    <nav style="display:flex; gap:32px; font-size:14px; font-weight:500; align-items:center">
+      <a href="#" style="color:#8a8072">La carte</a>
+      <a href="Les Stages.dc.html" style="color:#8a8072">Les stages</a>
+      <a href="#" style="color:#2b2620">Les transmetteurs</a>
+      <a href="#" style="color:#8a8072">L'association</a>
+      <a href="#" style="border:1px solid #a3512a; padding:8px 18px; border-radius:2px; color:#a3512a">Proposer une transmission</a>
+    </nav>
+  </header>
+
+  <div style="max-width:1240px; margin:0 auto; padding:44px 32px 28px; display:flex; justify-content:space-between; align-items:flex-end; gap:32px; flex-wrap:wrap">
+    <div>
+      <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#a3512a; margin-bottom:10px">Annuaire</div>
+      <h1 style="font-family:'Cormorant Garamond',serif; font-size:46px; font-weight:600; margin:0 0 10px; line-height:1.05">Les transmetteurs</h1>
+      <p style="font-size:15px; color:#5c554a; margin:0; max-width:72ch">Celles et ceux qui ouvrent leur atelier, leur fournil ou leur chantier. Beaucoup accueillent hors dates annoncées : écrivez-leur directement.</p>
+    </div>
+    <a href="#" style="border:1px solid #dcd4c4; background:#fff; padding:11px 20px; border-radius:2px; font-size:14px; font-weight:500; color:#2b2620">Voir sur la carte →</a>
+  </div>
+
+  <div style="max-width:1240px; margin:0 auto; padding:0 32px 80px; display:grid; grid-template-columns:250px minmax(0,1fr); gap:48px; align-items:start">
+    <aside style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px; position:sticky; top:100px">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px">
+        <h2 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0; font-weight:600">Filtrer</h2>
+        <button onClick="{{ onReset }}" style="background:none; border:none; padding:0; font-family:'Work Sans',sans-serif; font-size:12px; color:#a3512a; cursor:pointer">Tout effacer</button>
+      </div>
+
+      <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072; margin-bottom:10px">Famille</div>
+      <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:24px">
+        <sc-for list="{{ famillesFiltre }}" as="f" hint-placeholder-count="5">
+          <button onClick="{{ f.onClick }}" style="text-align:left; background: {{ f.bg }}; color: {{ f.color }}; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:8px 10px; border-radius:2px; cursor:pointer; display:flex; justify-content:space-between; gap:8px">
+            <span>{{ f.nom }}</span><span style="opacity:0.6">{{ f.compte }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072; margin-bottom:10px">Formes proposées</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px">
+        <sc-for list="{{ typesFiltre }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.onClick }}" style="background: {{ t.bg }}; color: {{ t.color }}; border:1px solid {{ t.border }}; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:500; padding:6px 11px; border-radius:2px; cursor:pointer">{{ t.nom }}</button>
+        </sc-for>
+      </div>
+
+      <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072; margin-bottom:10px">Conditions d'accueil</div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer">
+          <input type="checkbox" checked="{{ hebergement }}" onChange="{{ onToggleHeb }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+          <span>Hébergement sur place</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer">
+          <input type="checkbox" checked="{{ debutant }}" onChange="{{ onToggleDeb }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+          <span>Ouvert aux débutants</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer">
+          <input type="checkbox" checked="{{ dates }}" onChange="{{ onToggleDates }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+          <span>A des dates annoncées</span>
+        </label>
+      </div>
+    </aside>
+
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; padding-bottom:16px; border-bottom:1px solid #e8e2d6; margin-bottom:20px">
+        <div style="font-size:14px; color:#5c554a"><strong style="font-weight:600; color:#2b2620">{{ nbResultats }}</strong> transmetteurs</div>
+        <div style="font-size:13px; color:#8a8072">Par ordre alphabétique</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+        <sc-for list="{{ liste }}" as="p" hint-placeholder-count="6">
+          <a href="Fiche Transmetteur.dc.html" style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; overflow:hidden; color:#2b2620; display:flex; flex-direction:column" style-hover="border-color:#a3512a; color:#2b2620">
+            <div style="height:170px; min-width:0; overflow:hidden">
+              <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ p.slotId }}" shape="rect" placeholder="{{ p.placeholder }}" hint-size="100%,170px" style="width:100%; height:100%"></x-import>
+            </div>
+            <div style="padding:22px 24px 24px; display:flex; flex-direction:column; gap:12px; flex:1">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a; background:#f6e8de; padding:4px 9px; border-radius:2px">{{ p.famille }}</span>
+                <span style="font-size:12.5px; color:#8a8072">{{ p.lieu }}</span>
+              </div>
+              <div>
+                <div style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; line-height:1.15">{{ p.nom }}</div>
+                <div style="font-size:14px; font-weight:500; color:#a3512a; margin-top:4px">{{ p.savoirFaire }}</div>
+                <div style="font-size:13px; color:#8a8072; margin-top:2px">{{ p.metier }}</div>
+              </div>
+              <p style="font-size:14px; color:#5c554a; line-height:1.65; margin:0; flex:1; text-wrap:pretty">{{ p.mot }}</p>
+              <div style="display:flex; flex-wrap:wrap; gap:6px">
+                <sc-for list="{{ p.formes }}" as="fo" hint-placeholder-count="3">
+                  <span style="font-size:12px; font-weight:500; border:1px solid #e2dbcb; background:#faf8f4; padding:5px 10px; border-radius:2px; color:#5c554a">{{ fo }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-top:1px solid #f0ebe1; padding-top:14px">
+                <span style="font-size:12.5px; color:#8a8072">{{ p.prochaine }}</span>
+                <span style="font-size:13.5px; font-weight:600; color:#a3512a">Voir la fiche →</span>
+              </div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ vide }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:48px; text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; margin-bottom:8px">Aucun transmetteur ne correspond</div>
+          <div style="font-size:14px; color:#5c554a; margin-bottom:18px">Élargissez les filtres, ou explorez la carte par région.</div>
+          <button onClick="{{ onReset }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:12px 24px; border-radius:2px; cursor:pointer">Effacer les filtres</button>
+        </div>
+      </sc-if>
+
+      <div style="margin-top:36px; border:1px solid #e8e2d6; background:#f5f1e8; border-radius:2px; padding:28px 32px; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin-bottom:6px">Vous pratiquez un savoir-faire manuel ?</div>
+          <div style="font-size:14px; color:#5c554a">Créez votre fiche : gratuite, sans commission, visible sur la carte.</div>
+        </div>
+        <a href="#" style="background:#a3512a; color:#faf8f4; font-size:15px; font-weight:500; padding:14px 26px; border-radius:2px; white-space:nowrap" style-hover="background:#8a4222; color:#faf8f4">Créer ma fiche</a>
+      </div>
+    </div>
+  </div>
+
+  <footer style="border-top:1px solid #e8e2d6; padding:32px 48px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#8a8072">
+    <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:#2b2620">Main à Main</span>
+    <span>Association loi 1901 — transmettre les savoir-faire manuels</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TRANSMETTEURS = [
+  { nom: "Atelier Terre Crue", metier: "maçons en terre", savoirFaire: "Enduits terre et chaux", famille: "Habitat", lieu: "Haute-Garonne (31)", mot: "Nous rénovons des maisons en pisé et transmettons sur chantier réel : gobetis, corps d'enduit, finitions lissées.", formes: ["Stage payant", "Chantier participatif"], prochaine: "Prochaine date : 3 oct.", heb: false, deb: true, dates: true },
+  { nom: "Bastien Marchand", metier: "forgeron", savoirFaire: "Forge et coutellerie", famille: "Artisanat", lieu: "Sarthe (72)", mot: "Vingt ans devant l'enclume. J'aime commencer par la matière : sentir l'acier chaud avant de parler technique.", formes: ["Stage payant", "Portes ouvertes", "Apprentissage"], prochaine: "Prochaine date : 22 août", heb: false, deb: true, dates: true },
+  { nom: "Collectif Les Capitelles", metier: "bâtisseurs en pierre sèche", savoirFaire: "Pierre sèche", famille: "Habitat", lieu: "Aude (11)", mot: "Murs de terrasse, capitelles, calades. On travaille sans mortier, à plusieurs, au rythme du chantier collectif.", formes: ["Chantier participatif", "Aide bénévole"], prochaine: "Prochaine date : 12 août", heb: true, deb: true, dates: true },
+  { nom: "Élise Rouvier", metier: "paysanne-boulangère", savoirFaire: "Pain au levain au four à bois", famille: "Alimentation", lieu: "Ardèche (07)", mot: "Blés anciens, meule de pierre, four à bois. Je transmets toute la chaîne, du grain au pain, aux vraies heures du fournil.", formes: ["Stage payant", "Immersion", "Échange", "Portes ouvertes"], prochaine: "Prochaine date : 8 août", heb: true, deb: true, dates: true },
+  { nom: "Ferme du Grand Pré", metier: "maraîchers-semenciers", savoirFaire: "Semences paysannes et maraîchage", famille: "Jardin & nature", lieu: "Hérault (34)", mot: "Nous sélectionnons nos variétés depuis douze ans. Récolte, tri, conservation : tout s'apprend en faisant.", formes: ["Aide bénévole", "Immersion"], prochaine: "Prochaine date : 1er sept.", heb: true, deb: true, dates: true },
+  { nom: "Joseph Andrieu", metier: "pépiniériste", savoirFaire: "Greffe des fruitiers anciens", famille: "Jardin & nature", lieu: "Gironde (33)", mot: "Je conserve une centaine de variétés locales. J'échange volontiers la greffe contre un savoir-faire du bâti.", formes: ["Échange", "Atelier"], prochaine: "Prochaine date : 11 oct.", heb: false, deb: false, dates: true },
+  { nom: "Maud Le Guen", metier: "vannière", savoirFaire: "Vannerie d'osier", famille: "Artisanat", lieu: "Ille-et-Vilaine (35)", mot: "On commence par la cueillette au bord de la rivière. Un panier tenu dans ses mains vaut mille explications.", formes: ["Atelier", "Portes ouvertes"], prochaine: "Prochaine date : 20 sept.", heb: false, deb: true, dates: true },
+  { nom: "Michel Combe", metier: "charpentier", savoirFaire: "Charpente traditionnelle", famille: "Habitat", lieu: "Isère (38)", mot: "Assemblages bois, taille à la main, levage à l'ancienne. J'accueille surtout des gens en reconversion, sur demande.", formes: ["Apprentissage", "Aide bénévole"], prochaine: "Sur demande, toute l'année", heb: true, deb: false, dates: false },
+  { nom: "Nadia Bouchard", metier: "fromagère", savoirFaire: "Fromages fermiers au lait cru", famille: "Alimentation", lieu: "Doubs (25)", mot: "Traite du matin, caillage, moulage, cave d'affinage. Deux jours pour comprendre un fromage de bout en bout.", formes: ["Stage payant", "Immersion"], prochaine: "Sur demande, toute l'année", heb: true, deb: true, dates: false },
+  { nom: "Samuel Ariztia", metier: "potier", savoirFaire: "Tournage et cuisson au bois", famille: "Artisanat", lieu: "Saône-et-Loire (71)", mot: "Terre locale, tour à pied, four à bois deux fois l'an. La cuisson collective est le vrai moment d'apprentissage.", formes: ["Atelier", "Chantier participatif"], prochaine: "Sur demande, toute l'année", heb: false, deb: true, dates: false },
+];
+const FAMILLES = ["Toutes les familles", "Habitat", "Artisanat", "Alimentation", "Jardin & nature"];
+const FORMES = ["Stage payant", "Atelier", "Immersion", "Chantier participatif", "Aide bénévole", "Échange", "Portes ouvertes", "Apprentissage"];
+
+class Component extends DCLogic {
+  state = { famille: "Toutes les familles", types: [], hebergement: false, debutant: false, dates: false };
+
+  filtered() {
+    const s = this.state;
+    return TRANSMETTEURS.filter((p) =>
+      (s.famille === "Toutes les familles" || p.famille === s.famille) &&
+      (s.types.length === 0 || s.types.some((t) => p.formes.includes(t))) &&
+      (!s.hebergement || p.heb) && (!s.debutant || p.deb) && (!s.dates || p.dates)
+    );
+  }
+
+  renderVals() {
+    const s = this.state;
+    const list = this.filtered();
+    return {
+      liste: list.map((p) => Object.assign({}, p, {
+        slotId: "tr-" + p.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 28),
+        placeholder: "photo : " + p.savoirFaire,
+      })),
+      nbResultats: list.length,
+      vide: list.length === 0,
+      hebergement: s.hebergement,
+      debutant: s.debutant,
+      dates: s.dates,
+      onToggleHeb: () => this.setState({ hebergement: !s.hebergement }),
+      onToggleDeb: () => this.setState({ debutant: !s.debutant }),
+      onToggleDates: () => this.setState({ dates: !s.dates }),
+      onReset: () => this.setState({ famille: "Toutes les familles", types: [], hebergement: false, debutant: false, dates: false }),
+      famillesFiltre: FAMILLES.map((nom) => {
+        const on = s.famille === nom;
+        return {
+          nom,
+          compte: nom === "Toutes les familles" ? TRANSMETTEURS.length : TRANSMETTEURS.filter((p) => p.famille === nom).length,
+          bg: on ? "#f6e8de" : "transparent",
+          color: on ? "#a3512a" : "#4a4438",
+          onClick: () => this.setState({ famille: nom }),
+        };
+      }),
+      typesFiltre: FORMES.map((nom) => {
+        const on = s.types.includes(nom);
+        return {
+          nom,
+          bg: on ? "#a3512a" : "#fff",
+          color: on ? "#faf8f4" : "#4a4438",
+          border: on ? "#a3512a" : "#dcd4c4",
+          onClick: () => this.setState({ types: on ? s.types.filter((t) => t !== nom) : s.types.concat([nom]) }),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

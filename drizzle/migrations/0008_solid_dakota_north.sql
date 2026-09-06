@@ -1,0 +1,1 @@
+ALTER TABLE `transmetteurs` ADD `photo_portrait` text;

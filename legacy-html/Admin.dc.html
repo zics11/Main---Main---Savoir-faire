@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+  input, textarea, select { font-family:'Work Sans',sans-serif; }
+</style>
+</helmet>
+
+<div style="min-height:100vh">
+  <!-- Nav admin -->
+  <header style="display:flex; align-items:center; justify-content:space-between; padding:16px 32px; border-bottom:1px solid #e8e2d6; background:#2b2620; color:#faf8f4">
+    <div style="display:flex; align-items:baseline; gap:12px">
+      <a href="Accueil.dc.html" style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:700; color:#faf8f4">Main à Main</a>
+      <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#d9925f">administration</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:24px; font-size:13.5px">
+      <a href="La Carte.dc.html" style="color:#cfc8bb">Voir le site public</a>
+      <span style="color:#8a8072">Connecté en administrateur</span>
+    </div>
+  </header>
+
+  <!-- ═══ LISTE ═══ -->
+  <sc-if value="{{ vueListe }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:1240px; margin:0 auto; padding:36px 32px 80px">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:28px; flex-wrap:wrap; margin-bottom:28px">
+      <div>
+        <h1 style="font-family:'Cormorant Garamond',serif; font-size:38px; font-weight:600; margin:0 0 8px; line-height:1.06">Toutes les fiches</h1>
+        <p style="font-size:14.5px; color:#5c554a; margin:0">{{ compteResume }}</p>
+      </div>
+      <button onClick="{{ onNouvelle }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:500; padding:14px 26px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">+ Créer une fiche</button>
+    </div>
+
+    <!-- Recherche + filtres -->
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px">
+      <input type="text" value="{{ recherche }}" onChange="{{ onRecherche }}" placeholder="Chercher un nom, un savoir-faire, un département…" style="flex:1; min-width:280px; border:1px solid #d5cdbd; border-radius:2px; padding:11px 13px; font-size:14px; background:#fff; color:#2b2620; box-sizing:border-box">
+      <div style="display:flex; gap:6px; flex-wrap:wrap">
+        <sc-for list="{{ statutsFiltre }}" as="f" hint-placeholder-count="3">
+          <button onClick="{{ f.onClick }}" style="background: {{ f.bg }}; color: {{ f.color }}; border:1px solid {{ f.border }}; font-family:'Work Sans',sans-serif; font-size:13px; font-weight:500; padding:9px 14px; border-radius:2px; cursor:pointer">{{ f.nom }} <span style="opacity:0.6">{{ f.compte }}</span></button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Tableau -->
+    <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; overflow:hidden">
+      <div style="display:grid; grid-template-columns:64px minmax(0,1.4fr) minmax(0,1.1fr) 104px 88px 200px; gap:12px; padding:12px 18px; background:#f5f1e8; border-bottom:1px solid #e8e2d6; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072; font-weight:600">
+        <span>Photo</span><span>Fiche</span><span>Savoir-faire</span><span>Département</span><span>Statut</span><span></span>
+      </div>
+      <sc-for list="{{ fiches }}" as="f" hint-placeholder-count="6">
+        <div style="display:grid; grid-template-columns:64px minmax(0,1.4fr) minmax(0,1.1fr) 104px 88px 200px; gap:12px; padding:14px 18px; border-bottom:1px solid #f6f2e9; align-items:center">
+          <div style="width:64px; height:48px; overflow:hidden; border:1px solid #e8e2d6; border-radius:2px">
+            <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ f.slotId }}" shape="rect" placeholder="photo" hint-size="64px,48px" style="width:100%; height:100%"></x-import>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:14.5px; font-weight:600; line-height:1.3; overflow-wrap:anywhere">{{ f.nom }}</div>
+            <div style="font-size:12.5px; color:#8a8072; margin-top:2px; overflow-wrap:anywhere; line-height:1.4">{{ f.contact }}</div>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:13.5px; line-height:1.4">{{ f.savoirFaire }}</div>
+            <div style="font-size:12px; color:#8a8072; margin-top:2px">{{ f.famille }}</div>
+          </div>
+          <span style="font-size:13.5px">{{ f.dept }}</span>
+          <span style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color: {{ f.statutColor }}; background: {{ f.statutBg }}; padding:4px 9px; border-radius:2px; justify-self:start">{{ f.statut }}</span>
+          <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap; min-width:0">
+            <button onClick="{{ f.onEdit }}" style="border:1px solid #a3512a; background:#fff; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:2px; cursor:pointer; color:#a3512a" style-hover="background:#f6e8de">Éditer</button>
+            <button onClick="{{ f.onToggle }}" style="border:1px solid #dcd4c4; background:#fff; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:500; padding:7px 11px; border-radius:2px; cursor:pointer; color:#4a4438; white-space:nowrap" style-hover="background:#f6e8de">{{ f.toggleLabel }}</button>
+            <button onClick="{{ f.onDelete }}" style="border:none; background:none; font-family:'Work Sans',sans-serif; font-size:12.5px; padding:4px; cursor:pointer; color:#8a8072" style-hover="color:#a3512a">Suppr.</button>
+          </div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ aucuneFiche }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:44px; text-align:center">
+          <div style="font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:600; margin-bottom:6px">Aucune fiche ne correspond</div>
+          <div style="font-size:14px; color:#5c554a">Effacez la recherche ou changez le filtre de statut.</div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- Confirmation suppression -->
+    <sc-if value="{{ suppressionEnCours }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed; inset:0; background:rgba(43,38,32,0.5); display:flex; align-items:center; justify-content:center; z-index:50">
+        <div style="background:#faf8f4; border-radius:2px; padding:32px; width:420px; max-width:90vw">
+          <h3 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0 0 10px">Supprimer {{ suppressionNom }} ?</h3>
+          <p style="font-size:14px; color:#5c554a; line-height:1.6; margin:0 0 22px">La fiche, ses photos et ses {{ suppressionStages }} stages avec leurs dates seront définitivement supprimés.</p>
+          <div style="display:flex; gap:12px">
+            <button onClick="{{ onAnnulerSuppression }}" style="flex:1; background:none; border:1px solid #d5cdbd; font-family:'Work Sans',sans-serif; font-size:14px; padding:12px 0; border-radius:2px; cursor:pointer; color:#5c554a">Annuler</button>
+            <button onClick="{{ onConfirmerSuppression }}" style="flex:1; background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:12px 0; border-radius:2px; cursor:pointer">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ═══ ÉDITION ═══ -->
+  <sc-if value="{{ vueEdition }}" hint-placeholder-val="{{ false }}">
+  <div style="max-width:1240px; margin:0 auto; padding:28px 32px 80px">
+    <button onClick="{{ onRetour }}" style="background:none; border:none; padding:0; font-family:'Work Sans',sans-serif; font-size:13.5px; color:#a3512a; cursor:pointer; margin-bottom:18px">← Toutes les fiches</button>
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:28px; flex-wrap:wrap; margin-bottom:28px">
+      <div>
+        <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#a3512a; margin-bottom:8px">{{ editionBadge }}</div>
+        <h1 style="font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:600; margin:0 0 6px; line-height:1.08">{{ editionTitre }}</h1>
+        <p style="font-size:14px; color:#5c554a; margin:0">Tous les champs de la fiche publique sont modifiables ici.</p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center">
+        <a href="Fiche Transmetteur.dc.html" style="border:1px solid #dcd4c4; background:#fff; font-size:14px; font-weight:500; padding:12px 18px; border-radius:2px; color:#2b2620">Prévisualiser</a>
+        <button onClick="{{ onEnregistrer }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:500; padding:13px 26px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Enregistrer</button>
+      </div>
+    </div>
+
+    <sc-if value="{{ enregistre }}" hint-placeholder-val="{{ false }}">
+      <div style="border:1px solid #c6d3c2; background:#eef3ec; border-radius:2px; padding:14px 18px; margin-bottom:22px; font-size:14px; color:#3f5a3a">Fiche enregistrée.</div>
+    </sc-if>
+
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:36px; align-items:start">
+      <div style="display:flex; flex-direction:column; gap:20px">
+
+        <!-- Identité -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:600; margin:0 0 18px">Identité</h2>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px">
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Nom du lieu</span>
+              <input type="text" defaultValue="{{ ed.lieu }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Nom du transmetteur</span>
+              <input type="text" defaultValue="{{ ed.nom }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Métier</span>
+              <input type="text" defaultValue="{{ ed.metier }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Famille</span>
+              <select style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                <option>Alimentation</option><option>Habitat</option><option>Artisanat</option><option>Jardin et nature</option>
+              </select>
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Savoir-faire transmis</span>
+              <input type="text" defaultValue="{{ ed.savoirFaire }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Courriel de contact</span>
+              <input type="email" defaultValue="{{ ed.courriel }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </div>
+        </div>
+
+        <!-- Adresse -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:600; margin:0 0 18px">Adresse complète</h2>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px">
+            <label style="display:flex; flex-direction:column; gap:6px; grid-column:1 / -1">
+              <span style="font-size:12.5px; color:#5c554a">Numéro et voie</span>
+              <input type="text" defaultValue="{{ ed.voie }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Complément</span>
+              <input type="text" defaultValue="{{ ed.complement }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Code postal</span>
+              <input type="text" defaultValue="{{ ed.cp }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Commune</span>
+              <input type="text" defaultValue="{{ ed.commune }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Département</span>
+              <input type="text" defaultValue="{{ ed.departement }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Longitude</span>
+              <input type="text" defaultValue="{{ ed.lon }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Latitude</span>
+              <input type="text" defaultValue="{{ ed.lat }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px; grid-column:1 / -1">
+              <span style="font-size:12.5px; color:#5c554a">Accès, gare la plus proche</span>
+              <input type="text" defaultValue="{{ ed.acces }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </div>
+        </div>
+
+        <!-- Présentation -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:600; margin:0 0 14px">Présentation</h2>
+          <textarea style="width:100%; box-sizing:border-box; height:120px; border:1px solid #d5cdbd; border-radius:2px; padding:13px; font-size:14px; background:#fff; color:#2b2620; resize:vertical; line-height:1.65" defaultValue="{{ ed.presentation }}"></textarea>
+        </div>
+
+        <!-- Photos -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:600; margin:0 0 14px">Photos de la fiche</h2>
+          <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px">
+            <sc-for list="{{ ed.photos }}" as="ph" hint-placeholder-count="6">
+              <div>
+                <div style="height:110px; overflow:hidden; border:1px solid #e8e2d6; border-radius:2px">
+                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ ph.id }}" shape="rect" placeholder="{{ ph.placeholder }}" hint-size="100%,110px" style="width:100%; height:100%"></x-import>
+                </div>
+                <div style="font-size:12px; color:#8a8072; margin-top:6px">{{ ph.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- Infos pratiques -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:600; margin:0 0 16px">Infos pratiques</h2>
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer; color:#4a4438">
+            <input type="checkbox" checked="{{ hebergement }}" onChange="{{ onToggleHeb }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>Hébergement sur place</span>
+          </label>
+          <sc-if value="{{ hebergement }}" hint-placeholder-val="{{ true }}">
+            <label style="display:flex; flex-direction:column; gap:6px; margin-top:14px; padding-left:24px; border-left:2px solid #f0ebe1">
+              <span style="font-size:12.5px; color:#5c554a">Type d'hébergement</span>
+              <input type="text" defaultValue="{{ ed.typeHeb }}" placeholder="Yourte, chambre, camping, van…" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </sc-if>
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer; color:#4a4438; margin-top:18px">
+            <input type="checkbox" checked="{{ repas }}" onChange="{{ onToggleRepas }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>Repas sur place</span>
+          </label>
+          <sc-if value="{{ repas }}" hint-placeholder-val="{{ true }}">
+            <label style="display:flex; flex-direction:column; gap:6px; margin-top:14px; padding-left:24px; border-left:2px solid #f0ebe1">
+              <span style="font-size:12.5px; color:#5c554a">Type de repas</span>
+              <input type="text" defaultValue="{{ ed.typeRepas }}" placeholder="Partagés, midi seulement…" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </sc-if>
+          <label style="display:flex; flex-direction:column; gap:6px; margin-top:18px">
+            <span style="font-size:12.5px; color:#5c554a">Autres infos</span>
+            <textarea placeholder="Périodes d'accueil, accessibilité, ce qu'il faut apporter…" style="width:100%; box-sizing:border-box; height:80px; border:1px solid #d5cdbd; border-radius:2px; padding:12px; font-size:14px; background:#fff; color:#2b2620; resize:vertical; line-height:1.6" defaultValue="{{ ed.autresInfos }}"></textarea>
+          </label>
+        </div>
+
+        <!-- Stages et dates -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; gap:14px; margin-bottom:6px">
+            <h2 style="font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:600; margin:0">Stages et dates</h2>
+            <button onClick="{{ onAjouterStage }}" style="border:1px solid #a3512a; background:#fff; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:2px; cursor:pointer; color:#a3512a" style-hover="background:#f6e8de">+ Nouveau stage</button>
+          </div>
+          <p style="font-size:13.5px; color:#8a8072; margin:0 0 20px">Chaque stage a son intitulé, son niveau, son tarif et ses dates avec places et inscrits.</p>
+
+          <div style="display:flex; flex-direction:column; gap:18px">
+            <sc-for list="{{ ed.stages }}" as="st" hint-placeholder-count="3">
+              <div style="border:1px solid #e8e2d6; border-radius:2px">
+                <div style="padding:18px 20px; background:#faf8f4; border-bottom:1px solid #e8e2d6">
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px">
+                    <label style="display:flex; flex-direction:column; gap:5px">
+                      <span style="font-size:12px; color:#5c554a">Intitulé</span>
+                      <input type="text" defaultValue="{{ st.titre }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:10px 11px; font-size:13.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:5px">
+                      <span style="font-size:12px; color:#5c554a">Forme</span>
+                      <select style="border:1px solid #d5cdbd; border-radius:2px; padding:10px 11px; font-size:13.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                        <option>Stage payant</option><option>Atelier</option><option>Immersion</option><option>Chantier participatif</option><option>Aide bénévole</option><option>Échange</option><option>Portes ouvertes</option><option>Apprentissage</option>
+                      </select>
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:5px">
+                      <span style="font-size:12px; color:#5c554a">Niveau</span>
+                      <select style="border:1px solid #d5cdbd; border-radius:2px; padding:10px 11px; font-size:13.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                        <option>Débutant bienvenu</option><option>Quelques bases utiles</option><option>Intermédiaire</option><option>Confirmé</option><option>Tout public</option>
+                      </select>
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:5px">
+                      <span style="font-size:12px; color:#5c554a">Durée</span>
+                      <input type="text" defaultValue="{{ st.duree }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:10px 11px; font-size:13.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:5px">
+                      <span style="font-size:12px; color:#5c554a">Contrepartie</span>
+                      <input type="text" defaultValue="{{ st.prix }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:10px 11px; font-size:13.5px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                    </label>
+                  </div>
+                  <label style="display:flex; flex-direction:column; gap:5px; margin-top:12px">
+                    <span style="font-size:12px; color:#5c554a">Description</span>
+                    <textarea style="width:100%; box-sizing:border-box; height:66px; border:1px solid #d5cdbd; border-radius:2px; padding:11px; font-size:13.5px; background:#fff; color:#2b2620; resize:vertical; line-height:1.6" defaultValue="{{ st.description }}"></textarea>
+                  </label>
+                  <div style="display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap">
+                    <button onClick="{{ st.onAjouterDate }}" style="border:1px solid #a3512a; background:#fff; font-family:'Work Sans',sans-serif; font-size:12px; font-weight:600; padding:7px 12px; border-radius:2px; cursor:pointer; color:#a3512a" style-hover="background:#f6e8de">+ Ajouter une date</button>
+                    <button onClick="{{ st.onSupprimer }}" style="border:none; background:none; font-family:'Work Sans',sans-serif; font-size:12px; padding:4px; cursor:pointer; color:#8a8072" style-hover="color:#a3512a">Supprimer ce stage</button>
+                    <span style="font-size:12px; color:#8a8072; margin-left:auto">{{ st.resume }}</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column">
+                  <sc-for list="{{ st.dates }}" as="d" hint-placeholder-count="2">
+                    <div style="padding:14px 20px; border-bottom:1px solid #f6f2e9; display:flex; flex-direction:column; gap:12px">
+                      <label style="display:flex; flex-direction:column; gap:5px">
+                        <span style="font-size:11.5px; color:#8a8072">Dates</span>
+                        <input type="text" defaultValue="{{ d.label }}" style="border:1px solid #d5cdbd; border-radius:2px; padding:9px 10px; font-size:13px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                      </label>
+                      <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap">
+                      <div style="width:96px; flex-shrink:0">
+                        <div style="font-size:11.5px; color:#8a8072; margin-bottom:5px">Inscrits</div>
+                        <div style="display:flex; align-items:center; gap:4px">
+                          <button onClick="{{ d.onInsMinus }}" style="width:26px; height:30px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:14px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">−</button>
+                          <span style="flex:1; text-align:center; font-size:13.5px; font-weight:600">{{ d.inscrits }}</span>
+                          <button onClick="{{ d.onInsPlus }}" style="width:26px; height:30px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:14px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">+</button>
+                        </div>
+                      </div>
+                      <div style="width:96px; flex-shrink:0">
+                        <div style="font-size:11.5px; color:#8a8072; margin-bottom:5px">Places</div>
+                        <div style="display:flex; align-items:center; gap:4px">
+                          <button onClick="{{ d.onMinus }}" style="width:26px; height:30px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:14px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">−</button>
+                          <span style="flex:1; text-align:center; font-size:13.5px; font-weight:600">{{ d.places }}</span>
+                          <button onClick="{{ d.onPlus }}" style="width:26px; height:30px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:14px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">+</button>
+                        </div>
+                      </div>
+                      <div style="padding-bottom:6px; flex-shrink:0">
+                        <span style="font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color: {{ d.etatColor }}; background: {{ d.etatBg }}; padding:4px 9px; border-radius:2px; white-space:nowrap">{{ d.etat }}</span>
+                      </div>
+                      <div style="display:flex; gap:10px; align-items:center; margin-left:auto">
+                        <button onClick="{{ d.onToggle }}" style="border:1px solid #dcd4c4; background:#fff; font-family:'Work Sans',sans-serif; font-size:11.5px; font-weight:500; padding:7px 11px; border-radius:2px; cursor:pointer; color:#4a4438; white-space:nowrap" style-hover="background:#f6e8de">{{ d.toggleLabel }}</button>
+                        <button onClick="{{ d.onDelete }}" style="border:none; background:none; font-family:'Work Sans',sans-serif; font-size:11.5px; padding:2px; cursor:pointer; color:#8a8072; white-space:nowrap" style-hover="color:#a3512a">Supprimer</button>
+                      </div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ st.aucuneDate }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:16px 20px; font-size:13px; color:#8a8072">Aucune date pour ce stage.</div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <aside style="display:flex; flex-direction:column; gap:16px">
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">Publication</h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px">
+            <span style="font-size:14px">Fiche visible</span>
+            <button onClick="{{ onTogglePubliee }}" style="width:44px; height:24px; flex-shrink:0; border:none; border-radius:12px; background: {{ publieeBg }}; cursor:pointer; position:relative; padding:0">
+              <span style="position:absolute; top:3px; left: {{ publieeLeft }}; width:18px; height:18px; border-radius:50%; background:#fff"></span>
+            </button>
+          </div>
+          <p style="font-size:13px; color:#5c554a; line-height:1.6; margin:0">{{ publieeNote }}</p>
+        </div>
+
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">Témoignages publiés</h3>
+          <div style="display:flex; flex-direction:column; gap:14px">
+            <sc-for list="{{ ed.temoignages }}" as="t" hint-placeholder-count="2">
+              <div style="border-left:2px solid #dcc9ae; padding-left:14px">
+                <div style="font-size:13.5px; color:#4a4438; line-height:1.6; font-style:italic">« {{ t.texte }} »</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px">
+                  <span style="font-size:12px; color:#8a8072">{{ t.auteur }} — {{ t.contexte }}</span>
+                  <button onClick="{{ t.onDelete }}" style="border:none; background:none; font-family:'Work Sans',sans-serif; font-size:12px; padding:2px; cursor:pointer; color:#8a8072" style-hover="color:#a3512a">Retirer</button>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ ed.aucunTemoignage }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13.5px; color:#8a8072; line-height:1.6">Aucun témoignage pour cette fiche.</div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="border:1px solid #e8e2d6; background:#f5f1e8; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 10px; font-weight:600">Zone dangereuse</h3>
+          <p style="font-size:13.5px; color:#4a4438; line-height:1.6; margin:0 0 14px">Supprimer cette fiche efface aussi ses stages, ses dates et ses témoignages.</p>
+          <button onClick="{{ onSupprimerFiche }}" style="width:100%; border:1px solid #a3512a; background:#fff; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:11px 0; border-radius:2px; cursor:pointer; color:#a3512a" style-hover="background:#f6e8de">Supprimer la fiche</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const FICHES = [
+  {
+    id: "rouvier", lieu: "Le fournil de la Combe", nom: "Élise Rouvier", metier: "paysanne-boulangère",
+    savoirFaire: "Pain au levain au four à bois", famille: "Alimentation", dept: "07",
+    courriel: "elise@lefournildelacombe.fr", publiee: true,
+    voie: "410 chemin de la Combe", complement: "Lieu-dit Les Faysses", cp: "07200",
+    commune: "Saint-Julien-du-Serre", departement: "Ardèche (07)", lon: "4.36", lat: "44.62",
+    acces: "Gare d'Aubenas à 6 km — je viens vous chercher",
+    presentation: "Paysanne-boulangère depuis quinze ans, je cultive mes blés anciens, les mouds à la meule de pierre et cuis au four à bois. Je transmets l'ensemble de la chaîne : de l'entretien du levain jusqu'à la cuisson.",
+    heb: true, typeHeb: "Yourte de 4 places, à 50 m du fournil",
+    repas: true, typeRepas: "Repas partagés, produits de la ferme",
+    autresInfos: "Accueil de mars à novembre. Chaussures fermées et tablier conseillés.",
+    stages: [
+      { id: "s1", titre: "Une fournée de A à Z", type: "Stage payant", niveau: "Débutant bienvenu", duree: "2 jours", prix: "180 € / pers.", description: "Levain, pétrissage à la main, façonnage et conduite du four à bois.", dates: [
+        { id: "d1", label: "8–9 août", places: 4, inscrits: 2, ouvert: true },
+        { id: "d2", label: "3–4 octobre", places: 4, inscrits: 4, ouvert: true },
+      ] },
+      { id: "s2", titre: "Immersion au fournil", type: "Immersion", niveau: "Quelques bases utiles", duree: "1 semaine", prix: "Échange", description: "Une semaine à mes côtés, aux vraies heures du fournil. Esprit WWOOF.", dates: [
+        { id: "d3", label: "14–18 septembre", places: 2, inscrits: 1, ouvert: true },
+      ] },
+      { id: "s3", titre: "Fournée portes ouvertes", type: "Portes ouvertes", niveau: "Tout public", duree: "1 jour", prix: "Participation libre", description: "Un samedi par mois, le fournil est ouvert à tous.", dates: [
+        { id: "d4", label: "22 août", places: 20, inscrits: 7, ouvert: true },
+      ] },
+    ],
+    temoignages: [
+      { id: "t1", texte: "J'ai appris plus qu'en un an de livres. Élise explique avec les mains.", auteur: "Thomas", contexte: "mai 2026" },
+      { id: "t2", texte: "Le stage m'a débloquée sur le levain. Six mois après, je cuis toutes mes miches.", auteur: "Nadia", contexte: "octobre 2025" },
+    ],
+  },
+  {
+    id: "marchand", lieu: "La forge du Vieux Chêne", nom: "Bastien Marchand", metier: "forgeron",
+    savoirFaire: "Forge et coutellerie", famille: "Artisanat", dept: "72",
+    courriel: "bastien@forge-vieuxchene.fr", publiee: true,
+    voie: "12 route de la Forge", complement: "", cp: "72300",
+    commune: "Sablé-sur-Sarthe", departement: "Sarthe (72)", lon: "0.15", lat: "47.99",
+    acces: "Gare de Sablé à 2 km, à pied",
+    presentation: "Vingt ans devant l'enclume. J'aime commencer par la matière : sentir l'acier chaud avant de parler technique.",
+    heb: false, typeHeb: "",
+    repas: false, typeRepas: "",
+    autresInfos: "Atelier ouvert toute l'année sauf en août.",
+    stages: [
+      { id: "s4", titre: "La forge allumée", type: "Portes ouvertes", niveau: "Tout public", duree: "1 jour", prix: "Gratuit", description: "Démonstration de forge et de trempe, chacun tire son crochet.", dates: [
+        { id: "d5", label: "22 août", places: 20, inscrits: 5, ouvert: true },
+      ] },
+      { id: "s5", titre: "Forger son couteau de poche", type: "Stage payant", niveau: "Débutant bienvenu", duree: "2 jours", prix: "260 €", description: "De la lame brute au manche en bois local.", dates: [
+        { id: "d6", label: "24–25 octobre", places: 4, inscrits: 4, ouvert: true },
+        { id: "d7", label: "14–15 novembre", places: 4, inscrits: 0, ouvert: false },
+      ] },
+    ],
+    temoignages: [
+      { id: "t3", texte: "Deux jours intenses, et je repars avec un couteau que j'utilise tous les jours.", auteur: "Rémi", contexte: "mars 2026" },
+    ],
+  },
+  {
+    id: "capitelles", lieu: "Collectif Les Capitelles", nom: "Collectif Les Capitelles", metier: "bâtisseurs en pierre sèche",
+    savoirFaire: "Pierre sèche", famille: "Habitat", dept: "11",
+    courriel: "contact@lescapitelles.org", publiee: true,
+    voie: "Mairie, place de la Fontaine", complement: "", cp: "11220",
+    commune: "Lagrasse", departement: "Aude (11)", lon: "2.29", lat: "43.21",
+    acces: "Covoiturage depuis Carcassonne organisé",
+    presentation: "Murs de terrasse, capitelles, calades. On travaille sans mortier, à plusieurs, au rythme du chantier collectif.",
+    heb: true, typeHeb: "Camping sur le terrain communal",
+    repas: true, typeRepas: "Repas collectifs préparés à tour de rôle",
+    autresInfos: "Chantiers de mai à octobre. Apportez gants et chaussures de sécurité.",
+    stages: [
+      { id: "s6", titre: "Mur en pierre sèche, sans mortier", type: "Chantier participatif", niveau: "Débutant bienvenu", duree: "5 jours", prix: "Participation libre", description: "Relever un mur de terrasse à l'ancienne, chantier collectif encadré.", dates: [
+        { id: "d8", label: "12–16 août", places: 8, inscrits: 2, ouvert: true },
+      ] },
+    ],
+    temoignages: [],
+  },
+  {
+    id: "le-guen", lieu: "L'osier de la Vilaine", nom: "Maud Le Guen", metier: "vannière",
+    savoirFaire: "Vannerie d'osier", famille: "Artisanat", dept: "35",
+    courriel: "maud@osier-vilaine.fr", publiee: true,
+    voie: "3 impasse des Saules", complement: "", cp: "35190",
+    commune: "Tinténiac", departement: "Ille-et-Vilaine (35)", lon: "-1.68", lat: "48.11",
+    acces: "Gare de Rennes puis car, 40 min",
+    presentation: "On commence par la cueillette au bord de la rivière. Un panier tenu dans ses mains vaut mille explications.",
+    heb: false, typeHeb: "",
+    repas: true, typeRepas: "Repas du midi tiré du sac, café offert",
+    autresInfos: "Ateliers d'octobre à mars, saison de l'osier.",
+    stages: [
+      { id: "s7", titre: "Panier en osier vivant", type: "Atelier", niveau: "Débutant bienvenu", duree: "1 jour", prix: "75 €", description: "Cueillette de l'osier puis montage d'un panier à anse.", dates: [
+        { id: "d9", label: "20 septembre", places: 6, inscrits: 2, ouvert: true },
+      ] },
+    ],
+    temoignages: [
+      { id: "t4", texte: "Maud transmet une patience autant qu'une technique.", auteur: "Claire", contexte: "février 2026" },
+    ],
+  },
+  {
+    id: "combe", lieu: "Atelier Combe charpente", nom: "Michel Combe", metier: "charpentier",
+    savoirFaire: "Charpente traditionnelle", famille: "Habitat", dept: "38",
+    courriel: "m.combe@charpente-isere.fr", publiee: false,
+    voie: "78 chemin des Sarrazins", complement: "Hameau du Haut", cp: "38650",
+    commune: "Monestier-de-Clermont", departement: "Isère (38)", lon: "5.72", lat: "45.18",
+    acces: "Gare de Monestier, 1,5 km",
+    presentation: "Assemblages bois, taille à la main, levage à l'ancienne. J'accueille surtout des gens en reconversion, sur demande.",
+    heb: true, typeHeb: "Chambre dans la maison",
+    repas: true, typeRepas: "Repas partagés en famille",
+    autresInfos: "Pas de dates fixes : on convient ensemble.",
+    stages: [
+      { id: "s8", titre: "Semaine d'initiation à la charpente", type: "Apprentissage", niveau: "Quelques bases utiles", duree: "1 semaine", prix: "À convenir", description: "Taille d'un assemblage complet, du tracé au levage.", dates: [
+        { id: "d10", label: "Sur demande", places: 2, inscrits: 0, ouvert: false },
+      ] },
+    ],
+    temoignages: [],
+  },
+];
+
+const VIDE = {
+  id: "", lieu: "", nom: "", metier: "", savoirFaire: "", famille: "Alimentation", dept: "",
+  courriel: "", publiee: false, voie: "", complement: "", cp: "", commune: "", departement: "",
+  lon: "", lat: "", acces: "", presentation: "", heb: false, typeHeb: "", repas: false, typeRepas: "",
+  autresInfos: "", stages: [], temoignages: [],
+};
+
+class Component extends DCLogic {
+  state = {
+    fiches: FICHES,
+    vue: "liste",
+    editionId: null,
+    nouvelle: false,
+    brouillon: null,
+    recherche: "",
+    statut: "Toutes",
+    enregistre: false,
+    suppressionId: null,
+  };
+
+  fiche() {
+    const s = this.state;
+    if (s.nouvelle) return s.brouillon || VIDE;
+    return s.fiches.find((f) => f.id === s.editionId) || VIDE;
+  }
+
+  majFiche(fn) {
+    this.setState((s) => {
+      if (s.nouvelle) return { brouillon: fn(s.brouillon || VIDE) };
+      return { fiches: s.fiches.map((f) => (f.id === s.editionId ? fn(f) : f)) };
+    });
+  }
+
+  majStage(stageId, fn) {
+    this.majFiche((f) => Object.assign({}, f, {
+      stages: f.stages.map((st) => (st.id === stageId ? fn(st) : st)),
+    }));
+  }
+
+  majDate(stageId, dateId, fn) {
+    this.majStage(stageId, (st) => Object.assign({}, st, {
+      dates: st.dates.map((d) => (d.id === dateId ? fn(d) : d)),
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const q = s.recherche.trim().toLowerCase();
+    const parStatut = (f) => s.statut === "Toutes" || (s.statut === "Publiées" ? f.publiee : !f.publiee);
+    const liste = s.fiches.filter((f) =>
+      parStatut(f) &&
+      (q === "" || (f.nom + " " + f.lieu + " " + f.savoirFaire + " " + f.departement).toLowerCase().includes(q))
+    );
+    const nbStagesTotal = s.fiches.reduce((n, f) => n + f.stages.length, 0);
+    const nbDatesTotal = s.fiches.reduce((n, f) => n + f.stages.reduce((m, st) => m + st.dates.length, 0), 0);
+    const suppr = s.fiches.find((f) => f.id === s.suppressionId);
+    const ed = this.fiche();
+
+    const photos = [1, 2, 3, 4, 5, 6].map((i) => ({
+      id: "admin-" + (ed.id || "nouvelle") + "-photo-" + i,
+      label: i === 1 ? "Photo d'ouverture" : "Libre",
+      placeholder: i === 1 ? "photo principale" : "photo à ajouter",
+    }));
+
+    return {
+      vueListe: s.vue === "liste",
+      vueEdition: s.vue === "edition",
+      recherche: s.recherche,
+      onRecherche: (e) => this.setState({ recherche: e.target.value }),
+      compteResume: s.fiches.length + " fiches · " + nbStagesTotal + " stages · " + nbDatesTotal + " dates programmées",
+      aucuneFiche: liste.length === 0,
+      statutsFiltre: ["Toutes", "Publiées", "Masquées"].map((nom) => {
+        const on = s.statut === nom;
+        return {
+          nom,
+          compte: nom === "Toutes" ? s.fiches.length : s.fiches.filter((f) => (nom === "Publiées" ? f.publiee : !f.publiee)).length,
+          bg: on ? "#a3512a" : "#fff",
+          color: on ? "#faf8f4" : "#4a4438",
+          border: on ? "#a3512a" : "#dcd4c4",
+          onClick: () => this.setState({ statut: nom }),
+        };
+      }),
+      fiches: liste.map((f) => ({
+        nom: f.lieu,
+        contact: f.nom + " · " + f.courriel,
+        savoirFaire: f.savoirFaire,
+        famille: f.famille,
+        dept: f.departement,
+        nbStages: f.stages.length + " / " + f.stages.reduce((n, st) => n + st.dates.length, 0) + " dates",
+        statut: f.publiee ? "Publiée" : "Masquée",
+        statutColor: f.publiee ? "#4a6741" : "#8a8072",
+        statutBg: f.publiee ? "#eef3ec" : "#f0ebe1",
+        toggleLabel: f.publiee ? "Masquer" : "Publier",
+        slotId: "admin-" + f.id + "-photo-1",
+        onEdit: () => this.setState({ vue: "edition", editionId: f.id, nouvelle: false, enregistre: false }),
+        onToggle: () => this.setState({ fiches: s.fiches.map((x) => (x.id === f.id ? Object.assign({}, x, { publiee: !x.publiee }) : x)) }),
+        onDelete: () => this.setState({ suppressionId: f.id }),
+      })),
+      onNouvelle: () => this.setState({
+        vue: "edition", nouvelle: true, editionId: null, enregistre: false,
+        brouillon: Object.assign({}, VIDE, { id: "n" + Date.now(), stages: [], temoignages: [] }),
+      }),
+      suppressionEnCours: !!suppr,
+      suppressionNom: suppr ? suppr.lieu : "",
+      suppressionStages: suppr ? suppr.stages.length : 0,
+      onAnnulerSuppression: () => this.setState({ suppressionId: null }),
+      onConfirmerSuppression: () => this.setState({
+        fiches: s.fiches.filter((f) => f.id !== s.suppressionId),
+        suppressionId: null,
+      }),
+
+      editionBadge: s.nouvelle ? "Nouvelle fiche" : "Édition · " + ed.dept,
+      editionTitre: s.nouvelle ? "Créer une fiche" : ed.lieu,
+      enregistre: s.enregistre,
+      onEnregistrer: () => {
+        if (s.nouvelle) {
+          this.setState({
+            fiches: s.fiches.concat([s.brouillon]),
+            nouvelle: false, editionId: s.brouillon.id, brouillon: null, enregistre: true,
+          });
+        } else this.setState({ enregistre: true });
+      },
+      onRetour: () => this.setState({ vue: "liste", enregistre: false, nouvelle: false, brouillon: null }),
+      onSupprimerFiche: () => this.setState({ vue: "liste", suppressionId: ed.id }),
+
+      hebergement: ed.heb,
+      onToggleHeb: () => this.majFiche((f) => Object.assign({}, f, { heb: !f.heb })),
+      repas: ed.repas,
+      onToggleRepas: () => this.majFiche((f) => Object.assign({}, f, { repas: !f.repas })),
+      publieeBg: ed.publiee ? "#a3512a" : "#d5cdbd",
+      publieeLeft: ed.publiee ? "23px" : "3px",
+      publieeNote: ed.publiee
+        ? "La fiche apparaît sur la carte et ses dates dans la liste des stages."
+        : "La fiche est masquée du site public.",
+      onTogglePubliee: () => this.majFiche((f) => Object.assign({}, f, { publiee: !f.publiee })),
+
+      ed: {
+        lieu: ed.lieu, nom: ed.nom, metier: ed.metier, savoirFaire: ed.savoirFaire,
+        courriel: ed.courriel, voie: ed.voie, complement: ed.complement, cp: ed.cp,
+        commune: ed.commune, departement: ed.departement, lon: ed.lon, lat: ed.lat,
+        acces: ed.acces, presentation: ed.presentation, typeHeb: ed.typeHeb,
+        typeRepas: ed.typeRepas, autresInfos: ed.autresInfos,
+        photos: photos,
+        aucunTemoignage: ed.temoignages.length === 0,
+        temoignages: ed.temoignages.map((t) => ({
+          texte: t.texte, auteur: t.auteur, contexte: t.contexte,
+          onDelete: () => this.majFiche((f) => Object.assign({}, f, {
+            temoignages: f.temoignages.filter((x) => x.id !== t.id),
+          })),
+        })),
+        stages: ed.stages.map((st) => {
+          const libres = st.dates.reduce((n, d) => n + Math.max(0, d.places - d.inscrits), 0);
+          return {
+            titre: st.titre, duree: st.duree, prix: st.prix, description: st.description,
+            aucuneDate: st.dates.length === 0,
+            resume: st.dates.length + " date(s) · " + libres + " places libres",
+            onAjouterDate: () => this.majStage(st.id, (x) => Object.assign({}, x, {
+              dates: x.dates.concat([{ id: "d" + Date.now(), label: "À définir", places: 4, inscrits: 0, ouvert: false }]),
+            })),
+            onSupprimer: () => this.majFiche((f) => Object.assign({}, f, {
+              stages: f.stages.filter((x) => x.id !== st.id),
+            })),
+            dates: st.dates.map((d) => {
+              const restant = Math.max(0, d.places - d.inscrits);
+              const complet = restant === 0;
+              return {
+                label: d.label, places: d.places, inscrits: d.inscrits,
+                etat: !d.ouvert ? "Non publiée" : complet ? "Complet" : restant + " libre(s)",
+                etatColor: !d.ouvert ? "#8a8072" : complet ? "#a3512a" : "#4a6741",
+                etatBg: !d.ouvert ? "#f0ebe1" : complet ? "#f6e8de" : "#eef3ec",
+                toggleLabel: d.ouvert ? "Dépublier" : "Publier",
+                onInsPlus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { inscrits: Math.min(x.places, x.inscrits + 1) })),
+                onInsMinus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { inscrits: Math.max(0, x.inscrits - 1) })),
+                onPlus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { places: x.places + 1 })),
+                onMinus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { places: Math.max(x.inscrits, x.places - 1) })),
+                onToggle: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { ouvert: !x.ouvert })),
+                onDelete: () => this.majStage(st.id, (x) => Object.assign({}, x, { dates: x.dates.filter((y) => y.id !== d.id) })),
+              };
+            }),
+          };
+        }),
+      },
+      onAjouterStage: () => this.majFiche((f) => Object.assign({}, f, {
+        stages: f.stages.concat([{
+          id: "s" + Date.now(), titre: "Nouveau stage", type: "Stage payant",
+          niveau: "Débutant bienvenu", duree: "1 jour", prix: "", description: "", dates: [],
+        }]),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

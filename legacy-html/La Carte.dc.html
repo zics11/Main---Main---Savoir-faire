@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+</style>
+</helmet>
+
+<div style="min-height:100vh">
+  <header style="display:flex; align-items:center; justify-content:space-between; padding:20px 48px; border-bottom:1px solid #e8e2d6; background:#faf8f4">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <a href="Accueil.dc.html" style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; letter-spacing:0.01em; color:#2b2620">Main à Main</a>
+      <span style="font-size:12px; color:#8a8072; letter-spacing:0.12em; text-transform:uppercase">savoir-faire manuels</span>
+    </div>
+    <nav style="display:flex; gap:32px; font-size:14px; font-weight:500; align-items:center">
+      <a href="#" style="color:#2b2620">La carte</a>
+      <a href="Les Stages.dc.html" style="color:#8a8072">Les stages</a>
+      <a href="Les Transmetteurs.dc.html" style="color:#8a8072">Les transmetteurs</a>
+      <a href="#" style="color:#8a8072">L'association</a>
+      <a href="#" style="border:1px solid #a3512a; padding:8px 18px; border-radius:2px; color:#a3512a">Proposer une transmission</a>
+    </nav>
+  </header>
+
+  <div style="display:grid; grid-template-columns:340px minmax(0,1fr); align-items:stretch; min-height:calc(100vh - 77px)">
+    <!-- Panneau -->
+    <div style="border-right:1px solid #e8e2d6; background:#faf8f4; padding:28px 28px 40px; display:flex; flex-direction:column; gap:24px">
+      <div>
+        <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#a3512a; margin-bottom:8px">LA CARTE DES TRANSMETTEURS</div>
+        <h1 style="font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:600; margin:0 0 8px; line-height:1.1">Chaque point est quelqu'un qui transmet</h1>
+        <p style="font-size:14px; color:#5c554a; line-height:1.6; margin:0">Survolez un point pour voir qui c'est, cliquez pour ouvrir sa fiche.</p>
+      </div>
+
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px">
+          <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072">Famille</div>
+          <button onClick="{{ onReset }}" style="background:none; border:none; padding:0; font-family:'Work Sans',sans-serif; font-size:12px; color:#a3512a; cursor:pointer">Tout effacer</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:2px">
+          <sc-for list="{{ famillesFiltre }}" as="f" hint-placeholder-count="5">
+            <button onClick="{{ f.onClick }}" style="text-align:left; background: {{ f.bg }}; color: {{ f.color }}; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:8px 10px; border-radius:2px; cursor:pointer; display:flex; justify-content:space-between; gap:8px">
+              <span>{{ f.nom }}</span><span style="opacity:0.6">{{ f.compte }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072; margin-bottom:10px">Formes proposées</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px">
+          <sc-for list="{{ typesFiltre }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.onClick }}" style="background: {{ t.bg }}; color: {{ t.color }}; border:1px solid {{ t.border }}; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:500; padding:6px 11px; border-radius:2px; cursor:pointer">{{ t.nom }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#8a8072; margin-bottom:10px">Conditions d'accueil</div>
+        <div style="display:flex; flex-direction:column; gap:10px">
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer">
+            <input type="checkbox" checked="{{ hebergement }}" onChange="{{ onToggleHeb }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>Hébergement sur place</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer">
+            <input type="checkbox" checked="{{ debutant }}" onChange="{{ onToggleDeb }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>Ouvert aux débutants</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer">
+            <input type="checkbox" checked="{{ dates }}" onChange="{{ onToggleDates }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>A des dates annoncées</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #e8e2d6; padding-top:20px; font-size:14px; color:#5c554a">
+        <strong style="font-weight:600; color:#2b2620">{{ nbResultats }}</strong> transmetteurs sur la carte — la liste complète est en bas de page.
+      </div>
+    </div>
+
+    <!-- Carte -->
+    <div style="background:#f5f1e8; display:flex; flex-direction:column; min-height:0">
+      
+      <div style="flex:1; min-height:0; position:relative; overflow:hidden; padding:20px">
+        <div style="position:absolute; inset:20px">
+          <x-import component-from-global-scope="carte-france" from="./carte-france.js" data="{{ pointsJson }}" active="{{ actif }}" hint-size="100%,100%" style="width:100%; height:100%"></x-import>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste complète -->
+  <section style="border-top:1px solid #e8e2d6; background:#faf8f4">
+    <div style="max-width:1240px; margin:0 auto; padding:56px 32px 72px">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:24px">
+        <div>
+          <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#a3512a; margin-bottom:8px">Les points de la carte</div>
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:600; margin:0"><strong style="font-weight:600">{{ nbResultats }}</strong> transmetteurs</h2>
+        </div>
+        <a href="Les Transmetteurs.dc.html" style="font-size:14px; font-weight:500; border:1px solid #dcd4c4; background:#fff; padding:11px 20px; border-radius:2px; color:#2b2620">Voir l'annuaire détaillé →</a>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px">
+        <sc-for list="{{ liste }}" as="p" hint-placeholder-count="8">
+          <a href="Fiche Transmetteur.dc.html" onMouseEnter="{{ p.onEnter }}" onMouseLeave="{{ p.onLeave }}" style="border:1px solid {{ p.cardBorder }}; background:#fff; border-radius:2px; overflow:hidden; color:#2b2620; display:flex; flex-direction:column" style-hover="border-color:#a3512a; color:#2b2620">
+            <div style="height:150px; min-width:0; overflow:hidden">
+              <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ p.slotId }}" shape="rect" placeholder="{{ p.placeholder }}" hint-size="100%,150px" style="width:100%; height:100%"></x-import>
+            </div>
+            <div style="padding:20px 22px 22px; display:flex; flex-direction:column; gap:11px; flex:1">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a; background:#f6e8de; padding:4px 9px; border-radius:2px">{{ p.famille }}</span>
+                <span style="font-size:12.5px; color:#8a8072">{{ p.lieu }}</span>
+              </div>
+              <div>
+                <div style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; line-height:1.15">{{ p.nom }}</div>
+                <div style="font-size:14px; font-weight:500; color:#a3512a; margin-top:4px">{{ p.savoirFaire }}</div>
+                <div style="font-size:13px; color:#8a8072; margin-top:2px">{{ p.metier }}</div>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; flex:1; align-content:flex-start">
+                <sc-for list="{{ p.formes }}" as="fo" hint-placeholder-count="2">
+                  <span style="font-size:12px; font-weight:500; border:1px solid #e2dbcb; background:#faf8f4; padding:5px 10px; border-radius:2px; color:#5c554a">{{ fo }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-top:1px solid #f0ebe1; padding-top:12px">
+                <span style="font-size:12.5px; color:#8a8072">{{ p.prochaine }}</span>
+                <span style="font-size:13.5px; font-weight:600; color:#a3512a">Voir la fiche →</span>
+              </div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid #e8e2d6; padding:32px 48px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#8a8072">
+    <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:#2b2620">Main à Main</span>
+    <span>Association loi 1901 — transmettre les savoir-faire manuels</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TRANSMETTEURS = [
+  { id: "terre-crue", nom: "Atelier Terre Crue", metier: "maçons en terre", savoirFaire: "Enduits terre et chaux", famille: "Habitat", lieu: "Haute-Garonne (31)", dept: "31", lon: 1.44, lat: 43.6, formes: ["Stage payant", "Chantier participatif"], heb: false, deb: true, dates: true },
+  { id: "marchand", nom: "Bastien Marchand", metier: "forgeron", savoirFaire: "Forge et coutellerie", famille: "Artisanat", lieu: "Sarthe (72)", dept: "72", lon: 0.15, lat: 47.99, formes: ["Stage payant", "Portes ouvertes", "Apprentissage"], heb: false, deb: true, dates: true },
+  { id: "capitelles", nom: "Collectif Les Capitelles", metier: "bâtisseurs en pierre sèche", savoirFaire: "Pierre sèche", famille: "Habitat", lieu: "Aude (11)", dept: "11", lon: 2.29, lat: 43.21, formes: ["Chantier participatif", "Aide bénévole"], heb: true, deb: true, dates: true },
+  { id: "rouvier", nom: "Élise Rouvier", metier: "paysanne-boulangère", savoirFaire: "Pain au levain au four à bois", famille: "Alimentation", lieu: "Ardèche (07)", dept: "07", lon: 4.36, lat: 44.62, formes: ["Stage payant", "Immersion", "Échange", "Portes ouvertes"], heb: true, deb: true, dates: true },
+  { id: "grand-pre", nom: "Ferme du Grand Pré", metier: "maraîchers-semenciers", savoirFaire: "Semences paysannes", famille: "Jardin & nature", lieu: "Hérault (34)", dept: "34", lon: 3.88, lat: 43.61, formes: ["Aide bénévole", "Immersion"], heb: true, deb: true, dates: true },
+  { id: "andrieu", nom: "Joseph Andrieu", metier: "pépiniériste", savoirFaire: "Greffe des fruitiers anciens", famille: "Jardin & nature", lieu: "Gironde (33)", dept: "33", lon: -0.57, lat: 44.84, formes: ["Échange", "Atelier"], heb: false, deb: false, dates: true },
+  { id: "le-guen", nom: "Maud Le Guen", metier: "vannière", savoirFaire: "Vannerie d'osier", famille: "Artisanat", lieu: "Ille-et-Vilaine (35)", dept: "35", lon: -1.68, lat: 48.11, formes: ["Atelier", "Portes ouvertes"], heb: false, deb: true, dates: true },
+  { id: "combe", nom: "Michel Combe", metier: "charpentier", savoirFaire: "Charpente traditionnelle", famille: "Habitat", lieu: "Isère (38)", dept: "38", lon: 5.72, lat: 45.18, formes: ["Apprentissage", "Aide bénévole"], heb: true, deb: false, dates: false },
+  { id: "bouchard", nom: "Nadia Bouchard", metier: "fromagère", savoirFaire: "Fromages fermiers au lait cru", famille: "Alimentation", lieu: "Doubs (25)", dept: "25", lon: 6.02, lat: 47.24, formes: ["Stage payant", "Immersion"], heb: true, deb: true, dates: false },
+  { id: "ariztia", nom: "Samuel Ariztia", metier: "potier", savoirFaire: "Tournage et cuisson au bois", famille: "Artisanat", lieu: "Saône-et-Loire (71)", dept: "71", lon: 4.83, lat: 46.3, formes: ["Atelier", "Chantier participatif"], heb: false, deb: true, dates: false },
+  { id: "kirchner", nom: "Anton Kirchner", metier: "brasseur", savoirFaire: "Brasserie artisanale", famille: "Alimentation", lieu: "Bas-Rhin (67)", dept: "67", lon: 7.26, lat: 48.58, formes: ["Atelier", "Portes ouvertes"], heb: false, deb: true, dates: true },
+  { id: "pellec", nom: "Solenn Pellec", metier: "apicultrice", savoirFaire: "Apiculture et ruches troncs", famille: "Jardin & nature", lieu: "Finistère (29)", dept: "29", lon: -4.1, lat: 48.28, formes: ["Aide bénévole", "Atelier"], heb: true, deb: true, dates: false },
+  { id: "vidal", nom: "Hugo Vidal", metier: "coutelier", savoirFaire: "Coutellerie de poche", famille: "Artisanat", lieu: "Puy-de-Dôme (63)", dept: "63", lon: 3.08, lat: 45.77, formes: ["Stage payant"], heb: false, deb: true, dates: true },
+  { id: "moulin-loire", nom: "Le Moulin de Loire", metier: "meuniers", savoirFaire: "Meunerie à la meule de pierre", famille: "Alimentation", lieu: "Indre-et-Loire (37)", dept: "37", lon: 0.69, lat: 47.39, formes: ["Immersion", "Portes ouvertes"], heb: true, deb: false, dates: false },
+  { id: "mercier", nom: "Claire Mercier", metier: "maroquinière", savoirFaire: "Travail du cuir", famille: "Artisanat", lieu: "Moselle (57)", dept: "57", lon: 6.13, lat: 49.11, formes: ["Atelier", "Échange"], heb: false, deb: true, dates: true },
+  { id: "atelier-bois", nom: "Atelier du Faubourg", metier: "menuisiers", savoirFaire: "Menuiserie d'ameublement", famille: "Habitat", lieu: "Paris (75)", dept: "75", lon: 2.35, lat: 48.86, formes: ["Atelier", "Apprentissage"], heb: false, deb: true, dates: true },
+];
+const FAMILLES = ["Toutes les familles", "Habitat", "Artisanat", "Alimentation", "Jardin & nature"];
+const FORMES = ["Stage payant", "Atelier", "Immersion", "Chantier participatif", "Aide bénévole", "Échange", "Portes ouvertes", "Apprentissage"];
+
+class Component extends DCLogic {
+  state = { famille: "Toutes les familles", types: [], hebergement: false, debutant: false, dates: false, actif: "" };
+
+  filtered() {
+    const s = this.state;
+    return TRANSMETTEURS.filter((p) =>
+      (s.famille === "Toutes les familles" || p.famille === s.famille) &&
+      (s.types.length === 0 || s.types.some((t) => p.formes.includes(t))) &&
+      (!s.hebergement || p.heb) && (!s.debutant || p.deb) && (!s.dates || p.dates)
+    );
+  }
+
+  renderVals() {
+    const s = this.state;
+    const list = this.filtered().slice().sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+    return {
+      nbResultats: list.length,
+      actif: s.actif,
+      pointsJson: JSON.stringify(list.map((p) => ({
+        id: p.id, nom: p.nom, savoirFaire: p.savoirFaire, lieu: p.lieu,
+        lon: p.lon, lat: p.lat, href: "Fiche Transmetteur.dc.html",
+      }))),
+      liste: list.map((p) => ({
+        nom: p.nom, savoirFaire: p.savoirFaire, lieu: p.lieu, metier: p.metier,
+        famille: p.famille, formes: p.formes,
+        slotId: "carte-" + p.id,
+        placeholder: "photo : " + p.savoirFaire,
+        prochaine: p.dates ? "Dates annoncées" : "Sur demande, toute l'année",
+        cardBorder: s.actif === p.id ? "#a3512a" : "#e8e2d6",
+        onEnter: () => this.setState({ actif: p.id }),
+        onLeave: () => this.setState({ actif: "" }),
+      })),
+      hebergement: s.hebergement,
+      debutant: s.debutant,
+      dates: s.dates,
+      onToggleHeb: () => this.setState({ hebergement: !s.hebergement }),
+      onToggleDeb: () => this.setState({ debutant: !s.debutant }),
+      onToggleDates: () => this.setState({ dates: !s.dates }),
+      onReset: () => this.setState({ famille: "Toutes les familles", types: [], hebergement: false, debutant: false, dates: false }),
+      famillesFiltre: FAMILLES.map((nom) => {
+        const on = s.famille === nom;
+        return {
+          nom,
+          compte: nom === "Toutes les familles" ? TRANSMETTEURS.length : TRANSMETTEURS.filter((p) => p.famille === nom).length,
+          bg: on ? "#f6e8de" : "transparent",
+          color: on ? "#a3512a" : "#4a4438",
+          onClick: () => this.setState({ famille: nom }),
+        };
+      }),
+      typesFiltre: FORMES.map((nom) => {
+        const on = s.types.includes(nom);
+        return {
+          nom,
+          bg: on ? "#a3512a" : "#fff",
+          color: on ? "#faf8f4" : "#4a4438",
+          border: on ? "#a3512a" : "#dcd4c4",
+          onClick: () => this.setState({ types: on ? s.types.filter((t) => t !== nom) : s.types.concat([nom]) }),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

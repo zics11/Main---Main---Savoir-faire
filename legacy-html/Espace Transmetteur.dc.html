@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+  input, textarea, select { font-family:'Work Sans',sans-serif; }
+</style>
+</helmet>
+
+<div style="min-height:100vh">
+  <header style="display:flex; align-items:center; justify-content:space-between; padding:20px 48px; border-bottom:1px solid #e8e2d6; background:#faf8f4">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <a href="Accueil.dc.html" style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#2b2620">Main à Main</a>
+      <span style="font-size:12px; color:#8a8072; letter-spacing:0.12em; text-transform:uppercase">espace transmetteur</span>
+    </div>
+    <nav style="display:flex; gap:28px; font-size:14px; font-weight:500; align-items:center">
+      <a href="Fiche Transmetteur.dc.html" style="color:#8a8072">Voir ma fiche publique</a>
+      <div style="display:flex; align-items:center; gap:10px; padding-left:12px; border-left:1px solid #e8e2d6">
+        <span style="width:30px; height:30px; border-radius:50%; background:#f6e8de; color:#a3512a; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center">ÉR</span>
+        <span style="font-size:14px">Élise Rouvier</span>
+      </div>
+    </nav>
+  </header>
+
+  <div style="max-width:1240px; margin:0 auto; padding:36px 32px 80px">
+    <!-- En-tête -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:32px; flex-wrap:wrap; margin-bottom:24px">
+      <div>
+        <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#a3512a; margin-bottom:8px">Le fournil de la Combe</div>
+        <h1 style="font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:600; margin:0 0 8px; line-height:1.06">{{ titrePage }}</h1>
+        <p style="font-size:14.5px; color:#5c554a; margin:0">{{ sousTitrePage }}</p>
+      </div>
+      <sc-if value="{{ vueTransmissions }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ onOpenForm }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:500; padding:14px 26px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Ajouter une transmission</button>
+      </sc-if>
+    </div>
+
+    <!-- Sections -->
+    <div style="display:flex; gap:6px; border-bottom:1px solid #e8e2d6; margin-bottom:28px">
+      <sc-for list="{{ vues }}" as="v" hint-placeholder-count="2">
+        <button onClick="{{ v.onClick }}" style="background:none; border:none; border-bottom:2px solid {{ v.border }}; color: {{ v.color }}; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:600; padding:12px 16px; cursor:pointer; margin-bottom:-1px">{{ v.label }}</button>
+      </sc-for>
+    </div>
+
+    <!-- Rappel courriel -->
+    <sc-if value="{{ vueTransmissions }}" hint-placeholder-val="{{ true }}">
+      <div style="border:1px solid #e8e2d6; background:#f6e8de; border-radius:2px; padding:16px 20px; margin-bottom:32px; font-size:13.5px; color:#7c3d1c; line-height:1.6">
+        Les demandes vous arrivent directement par courriel, à elise@lefournildelacombe.fr — il n'y a pas de messagerie sur la plateforme. Les places indiquées ici sont un simple repère public : c'est vous qui tenez le compte.
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ vueTransmissions }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:40px; align-items:start">
+      <div>
+        <!-- Formulaire ajout -->
+        <sc-if value="{{ formOuvert }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid #a3512a; background:#fff; border-radius:2px; padding:24px 26px; margin-bottom:24px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px">
+              <h2 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0">Nouvelle date de stage</h2>
+              <button onClick="{{ onCloseForm }}" style="background:none; border:none; font-family:'Work Sans',sans-serif; font-size:13px; color:#8a8072; cursor:pointer; padding:0">Annuler</button>
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-bottom:14px">
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Rattacher à un stage existant</span>
+                <select style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+                  <option>Une fournée de A à Z</option><option>Immersion au fournil</option><option>Fournée portes ouvertes</option><option>Atelier levain pour enfants</option><option>— Créer un nouveau stage —</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Niveau requis</span>
+                <select style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+                  <option>Débutant bienvenu</option><option>Quelques bases utiles</option><option>Intermédiaire</option><option>Confirmé</option><option>Tout public, enfants acceptés</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Inscrits déjà connus</span>
+                <input type="number" placeholder="0" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Du</span>
+                <input type="date" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Au</span>
+                <input type="date" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Places</span>
+                <input type="number" placeholder="4" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Contrepartie</span>
+                <input type="text" placeholder="180 € / 2 jours, ou Échange" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+            </div>
+            <button onClick="{{ onCloseForm }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:14.5px; font-weight:500; padding:12px 24px; border-radius:2px; cursor:pointer">Publier la date</button>
+          </div>
+        </sc-if>
+
+        <!-- Onglets -->
+        <div style="display:flex; gap:4px; border-bottom:1px solid #e8e2d6; margin-bottom:4px">
+          <sc-for list="{{ onglets }}" as="o" hint-placeholder-count="3">
+            <button onClick="{{ o.onClick }}" style="background:none; border:none; border-bottom:2px solid {{ o.border }}; color: {{ o.color }}; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:600; padding:10px 14px; cursor:pointer; margin-bottom:-1px">{{ o.label }} <span style="font-weight:400; opacity:0.6">{{ o.compte }}</span></button>
+          </sc-for>
+        </div>
+
+        <!-- Stages et leurs dates -->
+        <div style="display:flex; flex-direction:column; gap:20px; margin-top:24px">
+          <sc-for list="{{ stages }}" as="st" hint-placeholder-count="3">
+            <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px">
+              <div style="padding:20px 24px; border-bottom:1px solid #f0ebe1">
+                <div style="display:grid; grid-template-columns:120px minmax(0,1fr); gap:18px; align-items:start">
+                  <div style="height:104px; min-width:0; overflow:hidden; border:1px solid #e8e2d6; border-radius:2px">
+                    <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ st.slotId }}" shape="rect" placeholder="{{ st.placeholder }}" hint-size="100%,104px" style="width:100%; height:100%"></x-import>
+                  </div>
+                  <div style="min-width:0">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; min-width:0">
+                      <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a; background:#f6e8de; padding:3px 8px; border-radius:2px">{{ st.type }}</span>
+                      <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#5c554a; border:1px solid #dcd4c4; padding:3px 8px; border-radius:2px">{{ st.niveau }}</span>
+                      <span style="font-size:12.5px; color:#8a8072">{{ st.duree }} · {{ st.prix }}</span>
+                    </div>
+                    <div style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; line-height:1.2">{{ st.titre }}</div>
+                    <p style="font-size:14px; color:#5c554a; line-height:1.65; margin:8px 0 0; text-wrap:pretty">{{ st.description }}</p>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px">
+                  <button onClick="{{ st.onAddDate }}" style="border:1px solid #a3512a; background:#fff; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:2px; cursor:pointer; color:#a3512a; white-space:nowrap" style-hover="background:#f6e8de">+ Ajouter une date</button>
+                  <button onClick="{{ st.onEdit }}" style="border:1px solid #dcd4c4; background:#fff; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:500; padding:8px 12px; border-radius:2px; cursor:pointer; color:#4a4438; white-space:nowrap" style-hover="background:#f6e8de">Modifier le stage</button>
+                  <span style="font-size:12.5px; color:#8a8072; margin-left:auto">{{ st.resume }}</span>
+                </div>
+              </div>
+
+              <div style="padding:18px 24px; border-bottom:1px solid #f0ebe1; background:#faf8f4">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:12px">
+                  <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#8a8072; font-weight:600">Programme de la journée</div>
+                  <button onClick="{{ st.onEdit }}" style="background:none; border:none; padding:0; font-family:'Work Sans',sans-serif; font-size:12.5px; color:#a3512a; cursor:pointer">Modifier le programme</button>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 28px">
+                  <sc-for list="{{ st.programme }}" as="p" hint-placeholder-count="4">
+                    <div style="display:flex; gap:12px; align-items:baseline">
+                      <span style="width:44px; flex-shrink:0; font-size:13px; font-weight:600; color:#a3512a; font-variant-numeric:tabular-nums">{{ p.heure }}</span>
+                      <span style="font-size:13.5px; color:#4a4438; line-height:1.5">{{ p.titre }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column">
+                <sc-for list="{{ st.dates }}" as="d" hint-placeholder-count="2">
+                  <div style="padding:16px 24px; border-bottom:1px solid #f6f2e9; display:flex; flex-direction:column; gap:12px">
+                    <div style="display:flex; gap:16px; align-items:center; min-width:0">
+                      <div style="width:76px; flex-shrink:0; text-align:center; border:1px solid #e8e2d6; background:#faf8f4; border-radius:2px; padding:8px 4px">
+                        <div style="font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:600; line-height:1.05">{{ d.jour }}</div>
+                        <div style="font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a">{{ d.mois }}</div>
+                      </div>
+                      <div style="min-width:0; flex:1">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:7px">
+                          <span style="font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color: {{ d.etatColor }}; background: {{ d.etatBg }}; padding:3px 8px; border-radius:2px">{{ d.etat }}</span>
+                          <span style="font-size:13px; color:#5c554a">{{ d.inscrits }} / {{ d.places }} inscrits · <strong style="font-weight:600; color: {{ d.restColor }}">{{ d.restant }}</strong></span>
+                        </div>
+                        <div style="width:100%; max-width:180px; height:6px; background:#ece6da; border-radius:3px; overflow:hidden">
+                          <div style="height:100%; width: {{ d.pct }}; background: {{ d.barColor }}"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; padding-left:92px">
+                      <div>
+                        <div style="font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:#8a8072; margin-bottom:5px">Inscrits</div>
+                        <div style="display:flex; align-items:center; gap:6px">
+                          <button onClick="{{ d.onInsMinus }}" style="width:28px; height:28px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:15px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">−</button>
+                          <span style="font-size:14px; font-weight:600; min-width:22px; text-align:center">{{ d.inscrits }}</span>
+                          <button onClick="{{ d.onInsPlus }}" style="width:28px; height:28px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:15px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">+</button>
+                        </div>
+                      </div>
+                      <div>
+                        <div style="font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:#8a8072; margin-bottom:5px">Places</div>
+                        <div style="display:flex; align-items:center; gap:6px">
+                          <button onClick="{{ d.onMinus }}" style="width:28px; height:28px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:15px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">−</button>
+                          <span style="font-size:14px; font-weight:600; min-width:22px; text-align:center">{{ d.places }}</span>
+                          <button onClick="{{ d.onPlus }}" style="width:28px; height:28px; border:1px solid #dcd4c4; background:#fff; border-radius:2px; font-size:15px; color:#2b2620; cursor:pointer; line-height:1" style-hover="background:#f6e8de">+</button>
+                        </div>
+                      </div>
+                      <div style="display:flex; gap:10px; align-items:center; margin-left:auto">
+                        <button onClick="{{ d.onToggle }}" style="border:1px solid #dcd4c4; background:#fff; font-family:'Work Sans',sans-serif; font-size:12px; font-weight:500; padding:7px 12px; border-radius:2px; cursor:pointer; color:#4a4438; white-space:nowrap" style-hover="background:#f6e8de">{{ d.toggleLabel }}</button>
+                        <button onClick="{{ d.onDelete }}" style="border:none; background:none; font-family:'Work Sans',sans-serif; font-size:12px; padding:2px; cursor:pointer; color:#8a8072; white-space:nowrap" style-hover="color:#a3512a">Supprimer</button>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ st.aucuneDate }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:22px 24px; font-size:13.5px; color:#8a8072">Aucune date dans cet onglet pour ce stage.</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ vide }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:44px; text-align:center; margin-top:24px">
+            <div style="font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; margin-bottom:8px">Rien dans cet onglet</div>
+            <div style="font-size:14px; color:#5c554a">Vos dates passées et non publiées restent consultables ici.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Colonne droite -->
+      <aside style="display:flex; flex-direction:column; gap:16px">
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">Ma fiche</h3>
+          <div style="display:flex; flex-direction:column; gap:11px; font-size:14px">
+            <div style="display:flex; justify-content:space-between; gap:12px"><span style="color:#8a8072">Visibilité</span><span style="font-weight:500; color:#4a6741">Publiée</span></div>
+            <div style="display:flex; justify-content:space-between; gap:12px"><span style="color:#8a8072">Photos</span><span style="font-weight:500">3 / 6</span></div>
+            <div style="display:flex; justify-content:space-between; gap:12px"><span style="color:#8a8072">Dernière mise à jour</span><span style="font-weight:500">12 juillet</span></div>
+          </div>
+          <a href="#" style="display:block; text-align:center; border:1px solid #dcd4c4; font-size:14px; font-weight:500; padding:11px 0; border-radius:2px; margin-top:16px; color:#2b2620" style-hover="background:#f6e8de; color:#2b2620">Modifier ma fiche</a>
+        </div>
+
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">Où arrivent les demandes</h3>
+          <div style="font-size:14px; font-weight:500; margin-bottom:6px">elise@lefournildelacombe.fr</div>
+          <p style="font-size:13.5px; color:#5c554a; line-height:1.6; margin:0 0 14px">Chaque personne intéressée vous écrit à cette adresse. Vous répondez depuis votre boîte, comme un courriel normal.</p>
+          <a href="#" style="display:block; text-align:center; border:1px solid #dcd4c4; font-size:14px; font-weight:500; padding:11px 0; border-radius:2px; color:#2b2620" style-hover="background:#f6e8de; color:#2b2620">Changer d'adresse</a>
+        </div>
+
+        <div style="border:1px solid #e8e2d6; background:#f5f1e8; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 10px; font-weight:600">Rappel</h3>
+          <p style="font-size:13.5px; color:#4a4438; line-height:1.65; margin:0">Main à Main ne gère ni réservation ni paiement, et ne compte pas les visites. Vous confirmez qui vient, par courriel.</p>
+        </div>
+      </aside>
+    </div>
+    </sc-if>
+
+    <!-- ═══ MA FICHE ═══ -->
+    <sc-if value="{{ vueFiche }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:40px; align-items:start">
+      <div style="display:flex; flex-direction:column; gap:20px">
+
+        <!-- Identité -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0 0 4px">Identité du lieu</h2>
+          <p style="font-size:13.5px; color:#8a8072; margin:0 0 20px">C'est le titre de votre fiche publique et ce qui apparaît sur la carte.</p>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px">
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Nom du lieu</span>
+              <input type="text" defaultValue="Le fournil de la Combe" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Votre nom</span>
+              <input type="text" defaultValue="Élise Rouvier" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Votre métier</span>
+              <input type="text" defaultValue="paysanne-boulangère" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Famille de savoir-faire</span>
+              <select style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                <option>Alimentation</option><option>Habitat</option><option>Artisanat</option><option>Jardin et nature</option>
+              </select>
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; color:#5c554a">Savoir-faire transmis</span>
+              <input type="text" defaultValue="Pain au levain au four à bois" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </div>
+
+          <div style="border-top:1px solid #f0ebe1; margin-top:22px; padding-top:20px">
+            <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#8a8072; font-weight:600; margin-bottom:14px">Adresse complète</div>
+            <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px">
+              <label style="display:flex; flex-direction:column; gap:6px; grid-column:1 / -1">
+                <span style="font-size:12.5px; color:#5c554a">Numéro et voie</span>
+                <input type="text" defaultValue="410 chemin de la Combe" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; grid-column:1 / -1">
+                <span style="font-size:12.5px; color:#5c554a">Complément (lieu-dit, hameau, bâtiment)</span>
+                <input type="text" defaultValue="Lieu-dit Les Faysses" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Code postal</span>
+                <input type="text" defaultValue="07200" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Commune</span>
+                <input type="text" defaultValue="Saint-Julien-du-Serre" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Département</span>
+                <input type="text" defaultValue="Ardèche (07)" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Pays</span>
+                <input type="text" defaultValue="France" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Comment vous trouver (accès, stationnement)</span>
+                <input type="text" defaultValue="Après le pont, première piste à droite" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Gare ou arrêt le plus proche</span>
+                <input type="text" defaultValue="Aubenas, 6 km — je viens vous chercher" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+            </div>
+            <label style="display:flex; align-items:flex-start; gap:9px; font-size:14px; cursor:pointer; margin-top:16px; color:#4a4438">
+              <input type="checkbox" defaultChecked="{{ vrai }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer; margin-top:2px; flex-shrink:0">
+              <span>Ne montrer l'adresse exacte qu'après un premier contact — la carte n'affiche alors que la commune.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Présentation -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0 0 4px">Ce que vous transmettez</h2>
+          <p style="font-size:13.5px; color:#8a8072; margin:0 0 18px">Le texte d'accueil de votre fiche. Parlez de votre pratique, pas de vos diplômes.</p>
+          <textarea style="width:100%; box-sizing:border-box; height:130px; border:1px solid #d5cdbd; border-radius:2px; padding:13px; font-size:14px; background:#fff; color:#2b2620; resize:vertical; line-height:1.65">Paysanne-boulangère depuis quinze ans, je cultive mes blés anciens, les mouds à la meule de pierre et cuis au four à bois. Je transmets l'ensemble de la chaîne : de l'entretien du levain jusqu'à la cuisson, en passant par le pétrissage à la main et la conduite du four.</textarea>
+        </div>
+
+        <!-- Photos -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; gap:14px; margin-bottom:4px">
+            <h2 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0">Photos du lieu</h2>
+            <span style="font-size:12.5px; color:#8a8072">3 sur 6 remplies</span>
+          </div>
+          <p style="font-size:13.5px; color:#8a8072; margin:0 0 18px">La première est la photo d'ouverture de votre fiche. Glissez vos images dans les cadres.</p>
+          <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px">
+            <sc-for list="{{ photos }}" as="ph" hint-placeholder-count="6">
+              <div>
+                <div style="height:120px; overflow:hidden; border:1px solid #e8e2d6; border-radius:2px">
+                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ ph.id }}" shape="rect" placeholder="{{ ph.placeholder }}" hint-size="100%,120px" style="width:100%; height:100%"></x-import>
+                </div>
+                <div style="font-size:12px; color:#8a8072; margin-top:6px">{{ ph.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- Infos pratiques -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0 0 4px">Infos pratiques</h2>
+          <p style="font-size:13.5px; color:#8a8072; margin:0 0 18px">Ce qui s'affiche en encadré sur votre fiche.</p>
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer; color:#4a4438">
+            <input type="checkbox" checked="{{ hebergement }}" onChange="{{ onToggleHebergement }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>J'héberge sur place</span>
+          </label>
+          <sc-if value="{{ hebergement }}" hint-placeholder-val="{{ true }}">
+            <label style="display:flex; flex-direction:column; gap:6px; margin-top:16px; padding-left:24px; border-left:2px solid #f0ebe1">
+              <span style="font-size:12.5px; color:#5c554a">Type d'hébergement</span>
+              <input type="text" defaultValue="Yourte de 4 places, à 50 m du fournil" placeholder="Yourte, chambre, camping, van…" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </sc-if>
+
+          <label style="display:flex; align-items:center; gap:9px; font-size:14px; cursor:pointer; color:#4a4438; margin-top:20px">
+            <input type="checkbox" checked="{{ repas }}" onChange="{{ onToggleRepas }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+            <span>Je propose les repas</span>
+          </label>
+          <sc-if value="{{ repas }}" hint-placeholder-val="{{ true }}">
+            <label style="display:flex; flex-direction:column; gap:6px; margin-top:16px; padding-left:24px; border-left:2px solid #f0ebe1">
+              <span style="font-size:12.5px; color:#5c554a">Type de repas</span>
+              <input type="text" defaultValue="Repas partagés, produits de la ferme, végétariens sur demande" placeholder="Partagés, midi seulement, à la charge de chacun…" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+            </label>
+          </sc-if>
+
+          <label style="display:flex; flex-direction:column; gap:6px; margin-top:20px">
+            <span style="font-size:12.5px; color:#5c554a">Autres infos</span>
+            <textarea placeholder="Animaux acceptés, accessibilité, ce qu'il faut apporter, périodes d'accueil…" style="width:100%; box-sizing:border-box; height:90px; border:1px solid #d5cdbd; border-radius:2px; padding:12px; font-size:14px; background:#fff; color:#2b2620; resize:vertical; line-height:1.6">Accueil de mars à novembre. Prévoyez des chaussures fermées et un tablier. Chiens bienvenus s'ils s'entendent avec les miens.</textarea>
+          </label>
+        </div>
+
+        <!-- Témoignages -->
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:24px 26px">
+          <h2 style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; margin:0 0 4px">Témoignages</h2>
+          <p style="font-size:13.5px; color:#8a8072; margin:0 0 20px">Vous n'écrivez pas les témoignages : vous invitez les personnes venues chez vous à en laisser un. Elles reçoivent un courriel avec un lien.</p>
+
+          <div style="border:1px solid #e8e2d6; background:#faf8f4; border-radius:2px; padding:20px 22px; margin-bottom:22px">
+            <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#8a8072; font-weight:600; margin-bottom:14px">Demander un témoignage</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px">
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Prénom</span>
+                <input type="text" placeholder="Camille" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Courriel</span>
+                <input type="email" placeholder="camille@exemple.fr" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Mois</span>
+                <select style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+                  <option>janvier</option><option>février</option><option>mars</option><option>avril</option><option>mai</option><option>juin</option><option selected="selected">juillet</option><option>août</option><option>septembre</option><option>octobre</option><option>novembre</option><option>décembre</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; color:#5c554a">Année</span>
+                <input type="text" placeholder="2026" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              </label>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; margin-top:16px; flex-wrap:wrap">
+              <button onClick="{{ onInviter }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:12px 22px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Envoyer la demande</button>
+              <sc-if value="{{ invitationEnvoyee }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:13.5px; color:#4a6741; font-weight:500">Demande envoyée. Le témoignage apparaîtra ici dès qu'elle aura répondu.</span>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#8a8072; font-weight:600; margin-bottom:14px">Témoignages reçus</div>
+          <div style="display:flex; flex-direction:column; gap:14px">
+            <sc-for list="{{ temoignages }}" as="t" hint-placeholder-count="2">
+              <div style="border:1px solid #e8e2d6; background:#faf8f4; border-radius:2px; padding:16px 18px">
+                <div style="font-size:14px; color:#4a4438; line-height:1.6; font-style:italic">« {{ t.texte }} »</div>
+                <div style="font-size:12.5px; color:#8a8072; margin-top:10px">{{ t.auteur }} — {{ t.contexte }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+          <button onClick="{{ onSaveFiche }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:15px; font-weight:500; padding:14px 30px; border-radius:2px; cursor:pointer" style-hover="background:#8a4222">Enregistrer ma fiche</button>
+          <a href="Fiche Transmetteur.dc.html" style="font-size:14px; font-weight:500">Prévisualiser la fiche publique →</a>
+          <sc-if value="{{ ficheEnregistree }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:13.5px; color:#4a6741; font-weight:500">Modifications enregistrées.</span>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- Colonne droite fiche -->
+      <aside style="display:flex; flex-direction:column; gap:16px">
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">Visibilité</h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px">
+            <span style="font-size:14px">Fiche publiée sur la carte</span>
+            <button onClick="{{ onTogglePubliee }}" style="width:44px; height:24px; flex-shrink:0; border:none; border-radius:12px; background: {{ publieeBg }}; cursor:pointer; position:relative; padding:0">
+              <span style="position:absolute; top:3px; left: {{ publieeLeft }}; width:18px; height:18px; border-radius:50%; background:#fff"></span>
+            </button>
+          </div>
+          <p style="font-size:13px; color:#5c554a; line-height:1.6; margin:0">{{ publieeNote }}</p>
+        </div>
+
+        <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 14px; font-weight:600">Où arrivent les demandes</h3>
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; color:#5c554a">Adresse de courriel</span>
+            <input type="email" defaultValue="elise@lefournildelacombe.fr" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px; margin-top:12px">
+            <span style="font-size:12.5px; color:#5c554a">Téléphone (optionnel, non public)</span>
+            <input type="tel" defaultValue="06 24 71 03 88" style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px; margin-top:12px">
+            <span style="font-size:12.5px; color:#5c554a">Délai de réponse annoncé</span>
+            <select style="border:1px solid #d5cdbd; border-radius:2px; padding:11px 12px; font-size:14px; background:#fff; color:#2b2620; width:100%; min-width:0; box-sizing:border-box">
+              <option>Sous 3 jours</option><option>Sous une semaine</option><option>Quand je peux, soyez patients</option>
+            </select>
+          </label>
+        </div>
+
+        <div style="border:1px solid #e8e2d6; background:#f5f1e8; border-radius:2px; padding:22px">
+          <h3 style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#8a8072; margin:0 0 10px; font-weight:600">Conseil</h3>
+          <p style="font-size:13.5px; color:#4a4438; line-height:1.65; margin:0">Les fiches avec au moins trois photos et un texte écrit à la première personne reçoivent bien plus de demandes. Écrivez comme vous parlez.</p>
+        </div>
+      </aside>
+    </div>
+    </sc-if>
+  </div>
+
+  <footer style="border-top:1px solid #e8e2d6; padding:32px 48px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#8a8072">
+    <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:#2b2620">Main à Main</span>
+    <span>Association loi 1901 — jamais de commission sur les stages</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    vue: "transmissions",
+    publiee: true,
+    ficheEnregistree: false,
+    invitationEnvoyee: false,
+    hebergement: true,
+    repas: true,
+    typesHeb: ["Yourte"],
+    temoignages: [
+      { id: 1, texte: "Une semaine en immersion : j'ai appris plus qu'en un an de livres. Élise explique avec les mains, on comprend avec le corps.", auteur: "Thomas", contexte: "immersion bénévole, mai 2026", publie: true },
+      { id: 2, texte: "Le stage de deux jours m'a débloquée sur le levain. Six mois après, je cuis toutes mes miches au four communal du village.", auteur: "Nadia", contexte: "stage, octobre 2025", publie: true },
+      { id: 3, texte: "Accueil chaleureux, les mains dans la pâte dès la première heure.", auteur: "Camille", contexte: "atelier, avril 2026", publie: false },
+    ],
+    onglet: "avenir",
+    formOuvert: false,
+    stages: [
+      {
+        id: "fournee", niveau: "Débutant bienvenu", type: "Stage payant", titre: "Une fournée de A à Z", duree: "2 jours", prix: "180 € / pers.",
+        description: "Deux jours au fournil : entretien du levain, pétrissage à la main, façonnage et conduite du four à bois. Vous repartez capable de mener une fournée seul·e.",
+        programme: [
+          { heure: "7 h", titre: "Rafraîchi du levain" },
+          { heure: "9 h", titre: "Pétrissage à la main" },
+          { heure: "12 h", titre: "Repas partagé" },
+          { heure: "14 h", titre: "Façonnage et apprêt" },
+          { heure: "17 h", titre: "Conduite du four à bois" },
+          { heure: "19 h", titre: "Défournement" },
+        ],
+        dates: [
+          { id: 1, jour: "8–9", mois: "août", places: 4, inscrits: 2, ouvert: true, statut: "avenir" },
+          { id: 4, jour: "3–4", mois: "oct", places: 4, inscrits: 4, ouvert: true, statut: "avenir" },
+          { id: 8, jour: "7–8", mois: "nov", places: 4, inscrits: 0, ouvert: false, statut: "avenir" },
+          { id: 6, jour: "6–7", mois: "juin", places: 4, inscrits: 4, ouvert: false, statut: "passe" },
+        ],
+      },
+      {
+        id: "immersion", niveau: "Quelques bases utiles", type: "Immersion", titre: "Immersion au fournil", duree: "1 semaine", prix: "Échange · logé en yourte",
+        description: "Une semaine à mes côtés, aux vraies heures du fournil, contre logement en yourte et repas partagés. Esprit WWOOF : on apprend en travaillant ensemble.",
+        programme: [
+          { heure: "6 h", titre: "Levain et allumage du four" },
+          { heure: "8 h", titre: "Fournée du jour" },
+          { heure: "13 h", titre: "Repas et sieste" },
+          { heure: "16 h", titre: "Travaux du fournil, meunerie" },
+          { heure: "18 h", titre: "Préparation du lendemain" },
+        ],
+        dates: [
+          { id: 3, jour: "14–18", mois: "sept", places: 2, inscrits: 1, ouvert: true, statut: "avenir" },
+          { id: 9, jour: "12–16", mois: "oct", places: 2, inscrits: 0, ouvert: true, statut: "avenir" },
+        ],
+      },
+      {
+        id: "portes", niveau: "Tout public", type: "Portes ouvertes", titre: "Fournée portes ouvertes", duree: "1 jour", prix: "Participation libre",
+        description: "Un samedi par mois, le fournil est ouvert : venez voir tourner une fournée, poser vos questions et goûter le pain sorti du four.",
+        programme: [
+          { heure: "9 h", titre: "Accueil, visite du fournil" },
+          { heure: "10 h", titre: "Démonstration de façonnage" },
+          { heure: "11 h", titre: "Enfournement au four à bois" },
+          { heure: "12 h", titre: "Dégustation et discussion" },
+        ],
+        dates: [
+          { id: 2, jour: "22", mois: "août", places: 20, inscrits: 7, ouvert: true, statut: "avenir" },
+          { id: 10, jour: "26", mois: "sept", places: 20, inscrits: 3, ouvert: true, statut: "avenir" },
+        ],
+      },
+      {
+        id: "levain-enfants", niveau: "Enfants 7–12 ans", type: "Atelier", titre: "Atelier levain pour enfants", duree: "1 jour", prix: "35 € / enfant",
+        description: "Une journée pour les 7–12 ans : nourrir un levain, pétrir sa propre pâte, façonner un petit pain et l'emporter cuit à la maison.",
+        programme: [
+          { heure: "10 h", titre: "On rencontre le levain" },
+          { heure: "11 h", titre: "Chacun pétrit sa pâte" },
+          { heure: "12 h", titre: "Pique-nique au fournil" },
+          { heure: "14 h", titre: "Façonnage et cuisson" },
+        ],
+        dates: [
+          { id: 7, jour: "20", mois: "juin", places: 8, inscrits: 8, ouvert: false, statut: "passe" },
+        ],
+      },
+    ],
+  };
+
+  majDate(stageId, dateId, fn) {
+    this.setState((s) => ({
+      stages: s.stages.map((st) => st.id !== stageId ? st : Object.assign({}, st, {
+        dates: st.dates.map((d) => (d.id === dateId ? fn(d) : d)),
+      })),
+    }));
+  }
+
+  supprDate(stageId, dateId) {
+    this.setState((s) => ({
+      stages: s.stages.map((st) => st.id !== stageId ? st : Object.assign({}, st, {
+        dates: st.dates.filter((d) => d.id !== dateId),
+      })),
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const toutes = s.stages.reduce((acc, st) => acc.concat(st.dates.map((d) => Object.assign({}, d, { stage: st }))), []);
+    const avenir = toutes.filter((d) => d.statut === "avenir" && d.ouvert);
+    const nonPubliees = toutes.filter((d) => d.statut === "avenir" && !d.ouvert);
+    const passe = toutes.filter((d) => d.statut === "passe");
+    const garde = (d) => s.onglet === "avenir" ? (d.statut === "avenir" && d.ouvert)
+      : s.onglet === "fermees" ? (d.statut === "avenir" && !d.ouvert)
+      : d.statut === "passe";
+    const onglets = [
+      { id: "avenir", label: "À venir", compte: avenir.length },
+      { id: "fermees", label: "Non publiées", compte: nonPubliees.length },
+      { id: "passe", label: "Passées", compte: passe.length },
+    ].map((o) => ({
+      label: o.label, compte: o.compte,
+      border: s.onglet === o.id ? "#a3512a" : "transparent",
+      color: s.onglet === o.id ? "#2b2620" : "#8a8072",
+      onClick: () => this.setState({ onglet: o.id }),
+    }));
+
+    const stages = s.stages.map((st) => {
+      const dates = st.dates.filter(garde);
+      return {
+        type: st.type, titre: st.titre, duree: st.duree, prix: st.prix, niveau: st.niveau,
+        description: st.description, programme: st.programme,
+        slotId: "stage-" + st.id,
+        placeholder: "photo : " + st.titre,
+        aucuneDate: dates.length === 0,
+        resume: st.dates.filter((d) => d.statut === "avenir" && d.ouvert).length + " date(s) publiée(s) · " +
+          st.dates.filter((d) => d.statut === "avenir" && d.ouvert).reduce((n, d) => n + Math.max(0, d.places - d.inscrits), 0) + " places libres",
+        onAddDate: () => this.setState({ formOuvert: true }),
+        onEdit: () => this.setState({ formOuvert: true }),
+        dates: dates.map((d) => {
+          const restant = Math.max(0, d.places - d.inscrits);
+          const complet = restant === 0;
+          return {
+            jour: d.jour, mois: d.mois, places: d.places, inscrits: d.inscrits,
+            restant: complet ? "complet" : restant + (restant > 1 ? " places libres" : " place libre"),
+            restColor: complet ? "#a3512a" : "#4a6741",
+            pct: Math.min(100, Math.round((d.inscrits / Math.max(1, d.places)) * 100)) + "%",
+            barColor: complet ? "#a3512a" : "#4a6741",
+            etat: !d.ouvert ? (d.statut === "passe" ? "Passée" : "Non publiée") : complet ? "Complet" : "Ouverte",
+            etatColor: !d.ouvert ? "#8a8072" : complet ? "#a3512a" : "#4a6741",
+            etatBg: !d.ouvert ? "#f0ebe1" : complet ? "#f6e8de" : "#eef3ec",
+            toggleLabel: d.ouvert ? "Dépublier" : "Publier",
+            onInsPlus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { inscrits: Math.min(x.places, x.inscrits + 1) })),
+            onInsMinus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { inscrits: Math.max(0, x.inscrits - 1) })),
+            onPlus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { places: x.places + 1 })),
+            onMinus: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { places: Math.max(x.inscrits, x.places - 1) })),
+            onToggle: () => this.majDate(st.id, d.id, (x) => Object.assign({}, x, { ouvert: !x.ouvert })),
+            onDelete: () => this.supprDate(st.id, d.id),
+          };
+        }),
+      };
+    }).filter((st) => !st.aucuneDate || s.onglet === "avenir");
+
+    return {
+      vrai: true,
+      vueTransmissions: s.vue === "transmissions",
+      vueFiche: s.vue === "fiche",
+      titrePage: s.vue === "fiche" ? "Ma fiche publique" : "Mes transmissions",
+      sousTitrePage: s.vue === "fiche"
+        ? "Tout ce qui apparaît sur votre fiche, modifiable ici."
+        : "Vos stages, vos dates, vos places. Rien n'est automatique : vous décidez de tout.",
+      vues: [
+        { id: "transmissions", label: "Mes transmissions" },
+        { id: "fiche", label: "Ma fiche" },
+      ].map((v) => ({
+        label: v.label,
+        border: s.vue === v.id ? "#a3512a" : "transparent",
+        color: s.vue === v.id ? "#2b2620" : "#8a8072",
+        onClick: () => this.setState({ vue: v.id, ficheEnregistree: false }),
+      })),
+      invitationEnvoyee: s.invitationEnvoyee,
+      onInviter: () => this.setState({ invitationEnvoyee: true }),
+      ficheEnregistree: s.ficheEnregistree,
+      onSaveFiche: () => this.setState({ ficheEnregistree: true }),
+      publieeBg: s.publiee ? "#a3512a" : "#d5cdbd",
+      publieeLeft: s.publiee ? "23px" : "3px",
+      publieeNote: s.publiee
+        ? "Votre point apparaît sur la carte de France et vos dates dans la liste des stages."
+        : "Votre fiche est masquée : personne ne peut vous trouver ni vous écrire.",
+      onTogglePubliee: () => this.setState({ publiee: !s.publiee }),
+      photos: [
+        { id: "fiche-photo-1", label: "Photo d'ouverture", placeholder: "photo : le fournil" },
+        { id: "fiche-photo-2", label: "Le lieu", placeholder: "photo : les pains" },
+        { id: "fiche-photo-3", label: "Le geste", placeholder: "photo : le four" },
+        { id: "fiche-photo-4", label: "Libre", placeholder: "photo à ajouter" },
+        { id: "fiche-photo-5", label: "Libre", placeholder: "photo à ajouter" },
+        { id: "fiche-photo-6", label: "Libre", placeholder: "photo à ajouter" },
+      ],
+      hebergement: s.hebergement,
+      onToggleHebergement: () => this.setState({ hebergement: !s.hebergement }),
+      repas: s.repas,
+      onToggleRepas: () => this.setState({ repas: !s.repas }),
+
+      temoignages: s.temoignages.map((t) => ({ texte: t.texte, auteur: t.auteur, contexte: t.contexte })),
+      formOuvert: s.formOuvert,
+      onOpenForm: () => this.setState({ formOuvert: true }),
+      onCloseForm: () => this.setState({ formOuvert: false }),
+      onglets,
+      stages,
+      vide: stages.every((st) => st.aucuneDate),
+    };
+  }
+}
+</script>
+</body>
+</html>

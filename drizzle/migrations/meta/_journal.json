@@ -1,0 +1,76 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1786893982215,
+      "tag": "0000_lowly_marvel_apes",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1786974511051,
+      "tag": "0001_handy_scarecrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786977234770,
+      "tag": "0002_naive_nightcrawler",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786978219397,
+      "tag": "0003_marvelous_pandemic",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786981788939,
+      "tag": "0004_sparkling_gambit",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786981819207,
+      "tag": "0005_flat_khan",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786982764108,
+      "tag": "0006_third_logan",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1786983902670,
+      "tag": "0007_misty_blackheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788630166668,
+      "tag": "0008_solid_dakota_north",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788677909935,
+      "tag": "0009_faulty_scarecrow",
+      "breakpoints": true
+    }
+  ]
+}

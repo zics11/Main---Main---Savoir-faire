@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+legacy-html
+data
+uploads
+.env
+.env.*
+!.env.example
+*.log

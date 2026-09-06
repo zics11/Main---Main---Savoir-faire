@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<style>
+  body { margin:0; background:#faf8f4; color:#2b2620; font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#a3512a; text-decoration:none; }
+  a:hover { color:#8a4222; }
+</style>
+</helmet>
+
+<div style="height:100vh; display:flex; flex-direction:column; overflow:hidden">
+  <!-- Nav -->
+  <header style="flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:16px 32px; border-bottom:1px solid #e8e2d6; background:#faf8f4">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <a href="Accueil.dc.html" style="font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:700; color:#2b2620">Main à Main</a>
+      <span style="font-size:11px; color:#8a8072; letter-spacing:0.12em; text-transform:uppercase">savoir-faire manuels</span>
+    </div>
+    <nav style="display:flex; gap:28px; font-size:14px; font-weight:500; align-items:center">
+      <a href="La Carte.dc.html" style="color:#8a8072">La carte</a>
+      <a href="#" style="color:#2b2620">Les stages</a>
+      <a href="Les Transmetteurs.dc.html" style="color:#8a8072">Les transmetteurs</a>
+      <a href="#" style="color:#8a8072">L'association</a>
+      <a href="#" style="border:1px solid #a3512a; padding:8px 16px; border-radius:2px; color:#a3512a">Proposer une transmission</a>
+    </nav>
+  </header>
+
+  <!-- Barre de filtres -->
+  <div style="flex-shrink:0; border-bottom:1px solid #e8e2d6; background:#fff; padding:12px 32px; display:flex; align-items:center; gap:14px; flex-wrap:wrap">
+    <div style="display:flex; gap:6px">
+      <sc-for list="{{ famillesFiltre }}" as="f" hint-placeholder-count="5">
+        <button onClick="{{ f.onClick }}" style="background: {{ f.bg }}; color: {{ f.color }}; border:1px solid {{ f.border }}; font-family:'Work Sans',sans-serif; font-size:13px; font-weight:500; padding:8px 14px; border-radius:2px; cursor:pointer">{{ f.nom }}</button>
+      </sc-for>
+    </div>
+    <span style="width:1px; height:26px; background:#e8e2d6"></span>
+    <div style="display:flex; gap:6px; flex-wrap:wrap">
+      <sc-for list="{{ typesFiltre }}" as="t" hint-placeholder-count="4">
+        <button onClick="{{ t.onClick }}" style="background: {{ t.bg }}; color: {{ t.color }}; border:1px solid {{ t.border }}; font-family:'Work Sans',sans-serif; font-size:13px; font-weight:500; padding:8px 12px; border-radius:2px; cursor:pointer">{{ t.nom }}</button>
+      </sc-for>
+    </div>
+    <span style="width:1px; height:26px; background:#e8e2d6"></span>
+    <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer; white-space:nowrap">
+      <input type="checkbox" checked="{{ hebergement }}" onChange="{{ onToggleHeb }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+      <span>Hébergement</span>
+    </label>
+    <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer; white-space:nowrap">
+      <input type="checkbox" checked="{{ trenteJours }}" onChange="{{ onToggle30 }}" style="width:15px; height:15px; accent-color:#a3512a; cursor:pointer">
+      <span>Sous 30 jours</span>
+    </label>
+    <button onClick="{{ onReset }}" style="margin-left:auto; background:none; border:none; font-family:'Work Sans',sans-serif; font-size:13px; color:#a3512a; cursor:pointer; white-space:nowrap">Tout effacer</button>
+  </div>
+
+  <!-- Split liste / carte -->
+  <div style="flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)">
+    <!-- Liste -->
+    <div style="min-width:0; overflow-y:auto; border-right:1px solid #e8e2d6">
+      <div style="padding:18px 24px 12px; display:flex; justify-content:space-between; align-items:baseline; gap:12px">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; line-height:1.1">{{ nbResultats }} transmissions</div>
+          <div style="font-size:13px; color:#8a8072; margin-top:3px">{{ sousTitre }}</div>
+        </div>
+        <span style="font-size:12.5px; color:#8a8072; white-space:nowrap">Date la plus proche d'abord</span>
+      </div>
+
+      <div style="padding:0 24px 32px; display:flex; flex-direction:column; gap:12px">
+        <sc-for list="{{ annonces }}" as="a" hint-placeholder-count="6">
+          <a href="Fiche Transmetteur.dc.html" onMouseEnter="{{ a.onEnter }}" onMouseLeave="{{ a.onLeave }}" style="display:grid; grid-template-columns:132px minmax(0,1fr); gap:16px; border:1px solid {{ a.border }}; background: {{ a.bg }}; border-radius:2px; padding:14px; color:#2b2620; align-items:stretch">
+            <div style="min-width:0; display:flex; flex-direction:column; gap:8px">
+              <div style="height:96px; overflow:hidden; border:1px solid #e8e2d6; border-radius:2px">
+                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ a.slotId }}" shape="rect" placeholder="{{ a.placeholder }}" hint-size="100%,96px" style="width:100%; height:100%"></x-import>
+              </div>
+              <div style="border:1px solid #e8e2d6; background:#faf8f4; border-radius:2px; padding:6px 4px; text-align:center">
+                <div style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; line-height:1.05">{{ a.jour }} {{ a.mois }}</div>
+                <div style="font-size:11px; color:#8a8072; margin-top:2px">{{ a.duree }}</div>
+              </div>
+            </div>
+            <div style="min-width:0; display:flex; flex-direction:column; gap:7px">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0">
+                <span style="font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#a3512a; background:#f6e8de; padding:4px 8px; border-radius:2px">{{ a.type }}</span>
+                <span style="font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5c554a; border:1px solid #dcd4c4; padding:4px 8px; border-radius:2px">{{ a.niveau }}</span>
+                <span style="font-size:13.5px; font-weight:600; color:#a3512a">· {{ a.prix }}</span>
+              </div>
+              <div style="font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:600; line-height:1.2">{{ a.titre }}</div>
+              <div style="font-size:13.5px; color:#5c554a; line-height:1.55">{{ a.desc }}</div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:2px">
+                <sc-for list="{{ a.atouts }}" as="at" hint-placeholder-count="2">
+                  <span style="font-size:11.5px; font-weight:500; border:1px solid #e2dbcb; background:#faf8f4; padding:4px 9px; border-radius:2px; color:#5c554a">{{ at }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px; color:#8a8072; margin-top:auto">{{ a.transmetteur }} · {{ a.lieu }} · <strong style="font-weight:600; color: {{ a.placesColor }}">{{ a.places }}</strong></div>
+            </div>
+          </a>
+        </sc-for>
+
+        <sc-if value="{{ vide }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid #e8e2d6; background:#fff; border-radius:2px; padding:40px; text-align:center">
+            <div style="font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:600; margin-bottom:8px">Rien dans cette zone</div>
+            <div style="font-size:14px; color:#5c554a; margin-bottom:18px">Dézoomez la carte ou élargissez les filtres : beaucoup de transmetteurs accueillent hors dates annoncées.</div>
+            <button onClick="{{ onReset }}" style="background:#a3512a; color:#faf8f4; border:none; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:500; padding:12px 24px; border-radius:2px; cursor:pointer">Voir toute la France</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- Carte -->
+    <div style="min-width:0; min-height:0; background:#f5f1e8; display:flex; flex-direction:column">
+      <div style="flex-shrink:0; border-bottom:1px solid #e8e2d6; background:#faf8f4; padding:10px 20px; display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; font-size:12.5px; color:#5c554a">
+        <span style="display:flex; gap:8px; align-items:center">
+          <span style="width:10px; height:10px; border-radius:50%; background:#a3512a; display:inline-block; flex-shrink:0"></span>
+          <span><strong style="font-weight:600; color:#2b2620">{{ nbResultats }}</strong> transmissions à venir sur la carte</span>
+        </span>
+        <span>Molette pour zoomer, glisser pour déplacer</span>
+      </div>
+      <div style="flex:1; min-height:0; position:relative; overflow:hidden">
+        <x-import component-from-global-scope="carte-france" from="./carte-france.js" data="{{ pointsJson }}" active="{{ actif }}" hint-size="100%,100%" style="width:100%; height:100%"></x-import>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const ANNONCES = [
+  { jour: "8–9", mois: "août", dans: 9, duree: "2 jours", type: "Stage payant", famille: "Alimentation", titre: "Une fournée de A à Z", places: 4, inscrits: 2, repas: true, niveau: "Débutant bienvenu", desc: "Levain, pétrissage à la main, façonnage et conduite du four à bois. On travaille aux vraies heures du fournil.", transmetteur: "Élise Rouvier", lieu: "Ardèche (07)", lon: 4.36, lat: 44.62, prix: "180 €", heb: true, deb: true, grat: false },
+  { jour: "12–16", mois: "août", dans: 13, duree: "5 jours", type: "Chantier participatif", famille: "Habitat", titre: "Mur en pierre sèche, sans mortier", places: 8, inscrits: 2, repas: true, niveau: "Débutant bienvenu", desc: "Relever un mur de terrasse à l'ancienne : choix des pierres, calage, fruit du mur. Chantier collectif encadré.", transmetteur: "Collectif Les Capitelles", lieu: "Aude (11)", lon: 2.29, lat: 43.21, prix: "Participation libre", heb: true, deb: true, grat: true },
+  { jour: "22", mois: "août", dans: 23, duree: "1 jour", type: "Portes ouvertes", famille: "Artisanat", titre: "La forge allumée", places: 20, inscrits: 5, repas: false, niveau: "Tout public", desc: "Démonstration de forge et de trempe, puis chacun tire son propre crochet sous l'enclume.", transmetteur: "Bastien Marchand", lieu: "Sarthe (72)", lon: 0.15, lat: 47.99, prix: "Gratuit", heb: false, deb: true, grat: true },
+  { jour: "1–7", mois: "sept", dans: 33, duree: "1 semaine", type: "Aide bénévole", famille: "Jardin & nature", titre: "Semaine semences paysannes", places: 4, inscrits: 1, repas: true, niveau: "Débutant bienvenu", desc: "Récolte, tri et conservation des semences potagères. Coup de main contre gîte, couvert et transmission.", transmetteur: "Ferme du Grand Pré", lieu: "Hérault (34)", lon: 3.88, lat: 43.61, prix: "Échange", heb: true, deb: true, grat: true },
+  { jour: "14–18", mois: "sept", dans: 46, duree: "5 jours", type: "Immersion", famille: "Alimentation", titre: "Immersion au fournil", places: 2, inscrits: 1, repas: true, niveau: "Quelques bases utiles", desc: "Cinq jours à mes côtés, du rafraîchi du levain au défournement. Esprit WWOOF, logé en yourte.", transmetteur: "Élise Rouvier", lieu: "Ardèche (07)", lon: 4.36, lat: 44.62, prix: "Échange", heb: true, deb: false, grat: true },
+  { jour: "20", mois: "sept", dans: 52, duree: "1 jour", type: "Atelier", famille: "Artisanat", titre: "Panier en osier vivant", places: 6, inscrits: 2, repas: false, niveau: "Débutant bienvenu", desc: "Cueillette de l'osier au bord de la rivière puis montage d'un panier à anse dans la journée.", transmetteur: "Maud Le Guen", lieu: "Ille-et-Vilaine (35)", lon: -1.68, lat: 48.11, prix: "75 €", heb: false, deb: true, grat: false },
+  { jour: "27", mois: "sept", dans: 59, duree: "1 jour", type: "Atelier", famille: "Artisanat", titre: "Initiation au travail du cuir", places: 6, inscrits: 1, repas: false, niveau: "Débutant bienvenu", desc: "Coupe, parage, couture sellier au fil de lin. Vous repartez avec un étui cousu main.", transmetteur: "Claire Mercier", lieu: "Moselle (57)", lon: 6.13, lat: 49.11, prix: "90 €", heb: false, deb: true, grat: false },
+  { jour: "3–4", mois: "oct", dans: 65, duree: "2 jours", type: "Stage payant", famille: "Habitat", titre: "Enduits terre et finitions à la chaux", places: 8, inscrits: 3, repas: true, niveau: "Débutant bienvenu", desc: "Préparer les mélanges, gobetis, corps d'enduit, finition lissée. Sur un chantier de rénovation réel.", transmetteur: "Atelier Terre Crue", lieu: "Haute-Garonne (31)", lon: 1.44, lat: 43.6, prix: "220 €", heb: false, deb: true, grat: false },
+  { jour: "11", mois: "oct", dans: 73, duree: "1 jour", type: "Échange", famille: "Jardin & nature", titre: "Greffe des fruitiers anciens", places: 5, inscrits: 3, repas: false, niveau: "Intermédiaire", desc: "Greffe en fente et en couronne sur porte-greffes locaux. J'échange volontiers contre un savoir-faire du bâti.", transmetteur: "Joseph Andrieu", lieu: "Gironde (33)", lon: -0.57, lat: 44.84, prix: "Troc", heb: false, deb: false, grat: true },
+  { jour: "18", mois: "oct", dans: 80, duree: "1 jour", type: "Portes ouvertes", famille: "Jardin & nature", titre: "Journée ruches troncs", places: 20, inscrits: 6, repas: true, niveau: "Tout public", desc: "Visite du rucher, fabrication d'une ruche tronc en châtaignier, dégustation de miels de bruyère.", transmetteur: "Solenn Pellec", lieu: "Finistère (29)", lon: -4.1, lat: 48.28, prix: "Libre", heb: true, deb: true, grat: true },
+  { jour: "24–25", mois: "oct", dans: 86, duree: "2 jours", type: "Stage payant", famille: "Artisanat", titre: "Forger son couteau de poche", places: 4, inscrits: 4, repas: false, niveau: "Débutant bienvenu", desc: "De la lame brute au manche en bois local : forge, trempe, affûtage, montage. Vous repartez avec votre couteau.", transmetteur: "Hugo Vidal", lieu: "Puy-de-Dôme (63)", lon: 3.08, lat: 45.77, prix: "260 €", heb: false, deb: true, grat: false },
+  { jour: "7–8", mois: "nov", dans: 100, duree: "2 jours", type: "Stage payant", famille: "Alimentation", titre: "Fromages fermiers au lait cru", places: 6, inscrits: 2, repas: true, niveau: "Débutant bienvenu", desc: "Traite du matin, caillage, moulage, cave d'affinage. Deux jours pour comprendre un fromage de bout en bout.", transmetteur: "Nadia Bouchard", lieu: "Doubs (25)", lon: 6.02, lat: 47.24, prix: "190 €", heb: true, deb: true, grat: false },
+];
+const FAMILLES = ["Toutes", "Habitat", "Artisanat", "Alimentation", "Jardin & nature"];
+const TYPES = ["Stage payant", "Atelier", "Immersion", "Chantier participatif", "Aide bénévole", "Échange", "Portes ouvertes"];
+
+class Component extends DCLogic {
+  state = { famille: "Toutes", types: [], hebergement: false, trenteJours: false, actif: "" };
+
+  slug(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 32); }
+
+  filtered() {
+    const s = this.state;
+    return ANNONCES.filter((a) =>
+      (s.famille === "Toutes" || a.famille === s.famille) &&
+      (s.types.length === 0 || s.types.includes(a.type)) &&
+      (!s.hebergement || a.heb) &&
+      (!s.trenteJours || a.dans <= 30)
+    );
+  }
+
+  renderVals() {
+    const s = this.state;
+    const list = this.filtered();
+    return {
+      nbResultats: list.length,
+      vide: list.length === 0,
+      actif: s.actif,
+      sousTitre: s.trenteJours ? "Départs dans les 30 prochains jours" : "Toutes les dates annoncées",
+      hebergement: s.hebergement,
+      trenteJours: s.trenteJours,
+      onToggleHeb: () => this.setState({ hebergement: !s.hebergement }),
+      onToggle30: () => this.setState({ trenteJours: !s.trenteJours }),
+      onReset: () => this.setState({ famille: "Toutes", types: [], hebergement: false, trenteJours: false }),
+      pointsJson: JSON.stringify(list.map((a) => ({
+        id: this.slug(a.titre), nom: a.titre,
+        savoirFaire: a.jour + " " + a.mois + " · " + a.type + " · " + a.prix +
+          " · " + (a.places - a.inscrits > 0 ? (a.places - a.inscrits) + " libre(s)" : "complet"),
+        lieu: a.transmetteur + ", " + a.lieu,
+        lon: a.lon, lat: a.lat, href: "Fiche Transmetteur.dc.html",
+      }))),
+      annonces: list.map((a) => {
+        const on = s.actif === this.slug(a.titre);
+        const atouts = [];
+        if (a.heb) atouts.push("Hébergement sur place");
+        if (a.repas) atouts.push("Repas sur place");
+        const restant = Math.max(0, a.places - a.inscrits);
+        const complet = restant === 0;
+        return Object.assign({}, a, {
+          atouts,
+          places: complet ? "Complet" : restant + (restant > 1 ? " places libres" : " place libre") + " / " + a.places,
+          placesColor: complet ? "#8a8072" : "#4a6741",
+          slotId: "annonce-" + this.slug(a.titre),
+          placeholder: "photo : " + a.titre,
+          border: on ? "#a3512a" : "#e8e2d6",
+          bg: on ? "#f6e8de" : "#fff",
+          onEnter: () => this.setState({ actif: this.slug(a.titre) }),
+          onLeave: () => this.setState({ actif: "" }),
+        });
+      }),
+      famillesFiltre: FAMILLES.map((nom) => {
+        const on = s.famille === nom;
+        return {
+          nom,
+          bg: on ? "#a3512a" : "#fff",
+          color: on ? "#faf8f4" : "#4a4438",
+          border: on ? "#a3512a" : "#dcd4c4",
+          onClick: () => this.setState({ famille: nom }),
+        };
+      }),
+      typesFiltre: TYPES.map((nom) => {
+        const on = s.types.includes(nom);
+        return {
+          nom,
+          bg: on ? "#a3512a" : "#fff",
+          color: on ? "#faf8f4" : "#4a4438",
+          border: on ? "#a3512a" : "#dcd4c4",
+          onClick: () => this.setState({ types: on ? s.types.filter((t) => t !== nom) : s.types.concat([nom]) }),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>
