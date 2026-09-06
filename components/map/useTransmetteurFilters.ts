@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { Domaine } from "@/lib/db/schema";
 import type { TransmetteurPoint } from "./types";
 
-const RAYONS_KM = [25, 50, 100, 200, 500];
+export const RAYONS_KM = [25, 50, 100, 200, 500];
 
 /**
  * État des filtres de la carte.

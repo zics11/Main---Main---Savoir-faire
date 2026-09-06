@@ -71,6 +71,10 @@
   }
   html {
     @apply font-sans;
+    /* Les ancres (#stage-…) s'arrêtent sous l'en-tête collant, jamais
+       dessous. La hauteur est publiée par HauteurEntete ; la valeur de repli
+       correspond à l'en-tête en grand écran. */
+    scroll-padding-top: calc(var(--hauteur-entete, 5rem) + 1.5rem);
   }
   h1,
   h2,

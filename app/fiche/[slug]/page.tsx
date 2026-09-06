@@ -138,6 +138,9 @@ export default async function FichePage({
                   {groupesStages.map((g) => (
                     <div
                       key={g.id}
+                      // Ancre visée depuis la page Stages, pour arriver
+                      // directement sur le bon stage.
+                      id={`stage-${g.id}`}
                       className="overflow-hidden rounded-sm border border-border bg-card"
                     >
                       <div className="p-5.5">

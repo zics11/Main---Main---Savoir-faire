@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FranceMap } from "@/components/map/FranceMap";
@@ -22,13 +22,25 @@ const DOMAINE_OPTIONS: (Domaine | "toutes")[] = [
   "jardin_nature",
 ];
 
-const TRENTE_JOURS_MS = 30 * 24 * 3600 * 1000;
+const JOUR_MS = 24 * 3600 * 1000;
+
+// Distances proposées pour « autour de moi », en km : elles cadrent la carte
+// (c'est le cadrage qui décide de la liste), elles ne filtrent pas.
+const RAYONS = [20, 100];
+
+// Échéances proposées, en jours ; null = pas de limite.
+const HORIZONS: { jours: number; label: string }[] = [
+  { jours: 7, label: "7 j" },
+  { jours: 30, label: "30 j" },
+  { jours: 90, label: "3 mois" },
+];
 
 export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
   const [domaine, setDomaine] = useState<Domaine | "toutes">("toutes");
+  const [recherche, setRecherche] = useState("");
   const [types, setTypes] = useState<string[]>([]);
   const [hebergement, setHebergement] = useState(false);
-  const [trenteJours, setTrenteJours] = useState(false);
+  const [horizon, setHorizon] = useState<number | null>(null);
   const [actif, setActif] = useState<string | null>(null);
   // frozen at mount — precise-to-the-second freshness isn't needed for a
   // "within 30 days" filter, and reading Date.now() during render is impure
@@ -36,14 +48,70 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
   // Comme sur la carte des transmetteurs : la carte garde tous les points
   // filtrés, seule la liste se restreint à ce qui est affiché à l'écran.
   const [cadrage, setCadrage] = useState<MapBounds | null>(null);
+  // « Autour de moi » ne filtre pas non plus : il recadre la carte, et c'est
+  // le cadrage qui décide de la liste.
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [rayonKm, setRayonKm] = useState(100);
+  const [geoErreur, setGeoErreur] = useState<string | null>(null);
+  const [panneau, setPanneau] = useState(false);
+
+  // Ce qui est masqué derrière le bouton « Filtres » — compté pour le signaler
+  // quand la fenêtre est refermée.
+  const nbFiltres =
+    (domaine !== "toutes" ? 1 : 0) + types.length + (hebergement ? 1 : 0);
+
+  useEffect(() => {
+    if (!panneau) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setPanneau(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [panneau]);
+
+  const onUseLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoErreur("La géolocalisation n'est pas disponible sur ce navigateur.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoErreur(null);
+      },
+      () => setGeoErreur("Localisation refusée ou indisponible.")
+    );
+  };
+
+  function choisirRayon(r: number) {
+    // Re-cliquer sur la distance active oublie la position et rend la carte
+    // à sa vue précédente.
+    if (position !== null && rayonKm === r) {
+      setPosition(null);
+      return;
+    }
+    setRayonKm(r);
+    if (position === null) onUseLocation();
+  }
+
+  const q = recherche.trim().toLowerCase();
 
   const filtres = useMemo(() => {
     return stages
       .filter((s) => domaine === "toutes" || s.transmetteur.domaine === domaine)
+      .filter(
+        (s) =>
+          q === "" ||
+          s.titre.toLowerCase().includes(q) ||
+          s.transmetteur.nom.toLowerCase().includes(q) ||
+          s.transmetteur.savoirFaire.toLowerCase().includes(q)
+      )
       .filter((s) => types.length === 0 || (s.type !== null && types.includes(s.type)))
       .filter((s) => !hebergement || s.transmetteur.hebergement)
-      .filter((s) => !trenteJours || s.dateDebut.getTime() - now <= TRENTE_JOURS_MS);
-  }, [stages, domaine, types, hebergement, trenteJours, now]);
+      .filter(
+        (s) => horizon === null || s.dateDebut.getTime() - now <= horizon * JOUR_MS
+      );
+  }, [stages, domaine, q, types, hebergement, horizon, now]);
 
   const visibles = useMemo(
     () =>
@@ -59,91 +127,250 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
     id: s.id,
   }));
 
+  const focus = useMemo(
+    () => (position ? { ...position, rayonKm } : null),
+    [position, rayonKm]
+  );
+
   const resetFiltres = () => {
     setDomaine("toutes");
+    setRecherche("");
     setTypes([]);
     setHebergement(false);
-    setTrenteJours(false);
+    setHorizon(null);
+    setPosition(null);
   };
 
   return (
     // min-h-0 à chaque niveau : sans ça un enfant flex/grid grandit avec son
     // contenu au lieu de se limiter à l'écran, et la liste ne défile jamais.
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Filtres, en bandeau */}
-      <div className="flex flex-wrap items-center gap-3.5 border-b border-border bg-card px-6 py-3 sm:px-12">
+      <div className="bg-background px-6 pt-5 pb-3 sm:px-12">
+        <h1 className="font-serif text-3xl font-semibold leading-tight">
+          Des dates pour apprendre en faisant
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cliquez sur un point de la carte pour un aperçu, puis sur
+          l&apos;aperçu pour ouvrir la fiche.
+        </p>
+      </div>
+
+      {/* Bandeau : on ne garde en permanence que la recherche, l'échéance et
+          la proximité. Domaine, formes et hébergement passent derrière un
+          bouton « Filtres », avec un compteur pour ne pas oublier qu'ils
+          sont actifs une fois la fenêtre refermée. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-background px-6 py-3 sm:px-12">
+        <span className="text-xs tracking-wide text-muted-foreground uppercase">
+          Rechercher
+        </span>
+        <input
+          type="text"
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          placeholder="Un stage, un nom, un savoir-faire…"
+          className="w-full rounded-sm border border-input bg-card px-3 py-2 text-sm sm:w-72"
+        />
+
+        <span className="hidden h-6 w-px bg-border sm:block" />
+
+        <span className="text-xs tracking-wide text-muted-foreground uppercase">
+          Quand
+        </span>
         <div className="flex flex-wrap gap-1.5">
-          {DOMAINE_OPTIONS.map((d) => {
-            const label = d === "toutes" ? "Tous" : DOMAINE_LABELS[d];
-            const on = domaine === d;
+          {HORIZONS.map((h) => {
+            const on = horizon === h.jours;
             return (
               <button
-                key={d}
+                key={h.jours}
                 type="button"
-                onClick={() => setDomaine(d)}
-                className={`rounded-sm border px-3 py-2 text-xs font-medium ${
+                // Un second clic sur l'échéance active la retire : c'est le
+                // seul moyen de revenir à « toutes les dates ».
+                onClick={() => setHorizon(on ? null : h.jours)}
+                className={`rounded-sm border px-3 py-2 text-sm font-medium ${
                   on
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-input bg-card text-foreground/80 hover:bg-accent"
                 }`}
               >
-                {label}
+                {h.label}
               </button>
             );
           })}
         </div>
-        <span className="h-6 w-px bg-border" />
+
+        <span className="hidden h-6 w-px bg-border sm:block" />
+
+        <span className="text-xs tracking-wide text-muted-foreground uppercase">
+          Autour de moi
+        </span>
         <div className="flex flex-wrap gap-1.5">
-          {TYPES_TRANSMISSION.map((nom) => {
-            const on = types.includes(nom);
+          {RAYONS.map((r) => {
+            const on = position !== null && rayonKm === r;
             return (
               <button
-                key={nom}
+                key={r}
                 type="button"
-                onClick={() =>
-                  setTypes((prev) =>
-                    on ? prev.filter((t) => t !== nom) : [...prev, nom]
-                  )
-                }
-                className={`rounded-sm border px-2.5 py-1.5 text-xs font-medium ${
+                onClick={() => choisirRayon(r)}
+                className={`rounded-sm border px-3 py-2 text-sm font-medium ${
                   on
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-input bg-card text-foreground/80 hover:bg-accent"
                 }`}
               >
-                {nom}
+                {r} km
               </button>
             );
           })}
         </div>
-        <span className="h-6 w-px bg-border" />
-        <label className="flex items-center gap-2 text-[13.5px] whitespace-nowrap">
-          <input
-            type="checkbox"
-            checked={hebergement}
-            onChange={(e) => setHebergement(e.target.checked)}
-            className="accent-primary"
-          />
-          Hébergement
-        </label>
-        <label className="flex items-center gap-2 text-[13.5px] whitespace-nowrap">
-          <input
-            type="checkbox"
-            checked={trenteJours}
-            onChange={(e) => setTrenteJours(e.target.checked)}
-            className="accent-primary"
-          />
-          Sous 30 jours
-        </label>
+        {geoErreur && <span className="text-xs text-destructive">{geoErreur}</span>}
+
+        {/* Volontairement plus marqué que les pastilles voisines : c'est le
+            seul bouton du bandeau qui ouvre une fenêtre. */}
+        <button
+          type="button"
+          onClick={() => setPanneau(true)}
+          className={`ml-auto flex items-center gap-2 rounded-sm border px-4 py-2 text-sm font-semibold whitespace-nowrap ${
+            nbFiltres > 0
+              ? "border-primary bg-primary text-primary-foreground hover:bg-[#8a4222]"
+              : "border-primary bg-card text-primary hover:bg-accent"
+          }`}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 5h16l-6.5 7.6V19l-3 1.5v-8.9L4 5z" />
+          </svg>
+          Filtres
+          {nbFiltres > 0 && (
+            <span className="rounded-full bg-primary-foreground/25 px-1.5 text-xs">
+              {nbFiltres}
+            </span>
+          )}
+        </button>
+
         <button
           type="button"
           onClick={resetFiltres}
-          className="ml-auto text-xs whitespace-nowrap text-primary"
+          className="text-sm whitespace-nowrap text-primary"
         >
           Tout effacer
         </button>
       </div>
 
+      {panneau && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-foreground/60 p-4 sm:p-8"
+          onClick={() => setPanneau(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filtres"
+            className="relative w-full max-w-lg rounded-sm border border-border bg-background p-6 shadow-lg sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPanneau(false)}
+              aria-label="Fermer"
+              className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-card text-lg hover:bg-accent"
+            >
+              ×
+            </button>
+
+            <h2 className="mb-6 font-serif text-2xl font-semibold">Filtres</h2>
+
+            <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
+              Domaine
+            </div>
+            <div className="mb-6 flex flex-col gap-0.5">
+              {DOMAINE_OPTIONS.map((d) => {
+                const count =
+                  d === "toutes"
+                    ? stages.length
+                    : stages.filter((s) => s.transmetteur.domaine === d).length;
+                const label = d === "toutes" ? "Tous les domaines" : DOMAINE_LABELS[d];
+                const on = domaine === d;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDomaine(d)}
+                    className={`flex items-center justify-between rounded-sm px-2.5 py-2 text-left text-sm font-medium ${
+                      on ? "bg-accent text-primary" : "text-foreground/80 hover:bg-accent/50"
+                    }`}
+                  >
+                    <span>{label}</span>
+                    <span className="opacity-60">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
+              Formes proposées
+            </div>
+            <div className="mb-6 flex flex-wrap gap-1.5">
+              {TYPES_TRANSMISSION.map((nom) => {
+                const on = types.includes(nom);
+                return (
+                  <button
+                    key={nom}
+                    type="button"
+                    onClick={() =>
+                      setTypes((prev) =>
+                        on ? prev.filter((t) => t !== nom) : [...prev, nom]
+                      )
+                    }
+                    className={`rounded-sm border px-2.5 py-1.5 text-xs font-medium ${
+                      on
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-card text-foreground/80 hover:bg-accent"
+                    }`}
+                  >
+                    {nom}
+                  </button>
+                );
+              })}
+            </div>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={hebergement}
+                onChange={(e) => setHebergement(e.target.checked)}
+                className="accent-primary"
+              />
+              Hébergement sur place
+            </label>
+
+            <div className="mt-7 flex items-center justify-between gap-4 border-t border-border pt-5">
+              <button
+                type="button"
+                onClick={resetFiltres}
+                className="text-sm text-primary"
+              >
+                Tout effacer
+              </button>
+              <button
+                type="button"
+                onClick={() => setPanneau(false)}
+                className="rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+              >
+                Voir les {visibles.length} {visibles.length > 1 ? "dates" : "date"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* min-h-0 : sans ça la grille grandit avec son contenu et la colonne
           de gauche ne défile jamais — les dernières dates deviennent
           inatteignables. */}
@@ -176,7 +403,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
               return (
                 <Link
                   key={s.id}
-                  href={`/fiche/${s.transmetteur.slug}`}
+                  href={`/fiche/${s.transmetteur.slug}#stage-${s.stageId}`}
                   onMouseEnter={() => setActif(s.id)}
                   onMouseLeave={() => setActif(null)}
                   className={`flex h-36 overflow-hidden rounded-sm border bg-card ${
@@ -269,6 +496,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
             activeId={actif}
             onHover={setActif}
             onBoundsChange={setCadrage}
+            focus={focus}
           />
         </div>
       </div>

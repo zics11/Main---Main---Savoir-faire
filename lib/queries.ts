@@ -36,7 +36,10 @@ export async function getPublishedTransmetteurs(): Promise<
 }
 
 export type UpcomingStage = {
+  /** Identifiant de la date. */
   id: string;
+  /** Identifiant du stage parent — sert d'ancre vers la fiche. */
+  stageId: string;
   titre: string;
   type: string | null;
   niveau: string | null;
@@ -70,6 +73,7 @@ export async function getUpcomingStages(): Promise<UpcomingStage[]> {
     .filter((d) => d.stage.transmetteur.publiee)
     .map((d) => ({
       id: d.id,
+      stageId: d.stage.id,
       titre: d.stage.titre,
       type: d.stage.type,
       niveau: d.stage.niveau,

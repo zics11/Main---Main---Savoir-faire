@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { HauteurEntete } from "./HauteurEntete";
 import { NavLink } from "./NavLink";
 
 export async function Header() {
@@ -59,6 +60,8 @@ export async function Header() {
           </form>
         )}
       </nav>
+
+      <HauteurEntete />
     </header>
   );
 }
