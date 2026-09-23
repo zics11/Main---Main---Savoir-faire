@@ -68,6 +68,11 @@
   --statut-en-cours-fond: #f2efe8;
   --statut-bloquee: #9d2f2f;
   --statut-bloquee-fond: #f8e7e4;
+  /* Réglages réservés à l'association (compte, blocage, suppression) : un
+     fond à part, pour les distinguer du contenu de la fiche. */
+  --admin: #43413c;
+  --admin-fond: #eceae4;
+  --admin-bord: #d6d2c8;
   --border: #e8e2d6;
   --input: #d5cdbd;
   --ring: #a3512a;

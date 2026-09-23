@@ -92,9 +92,10 @@ export async function updateFiche(
   let slug = existing.slug;
   try {
     const fields = parseFicheFields(formData);
+    // Une fiche bloquée ne se publie pas, et rien d'incomplet ne part en
+    // ligne : sans savoir-faire, lieu ou point sur la carte, la fiche n'a
+    // rien à montrer ni où s'afficher.
     const publiee = formData.get("publiee") === "on" && !existing.bloqueeLe;
-    // Rien d'incomplet ne part en ligne : sans savoir-faire, lieu ou point
-    // sur la carte, la fiche n'aurait rien à montrer ni où s'afficher.
     if (publiee) {
       const manquants = champsManquants(fields);
       if (manquants.length) {
@@ -125,7 +126,7 @@ export async function updateFiche(
           publiee && !existing.premiereValidationLe
             ? new Date()
             : existing.premiereValidationLe,
-        // Une demande en cours n'est soldée que si la publication change :
+        // Une demande en cours n'est soldée que si la fiche part en ligne :
         // éditer une fiche en attente ne doit pas effacer sa demande.
         publicationDemandeeLe: publiee ? null : existing.publicationDemandeeLe,
         email,

@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CompteTransmetteur } from "@/components/admin/CompteTransmetteur";
+import { BlocageFiche } from "@/components/admin/BlocageFiche";
+import { ZoneDangereuse } from "@/components/admin/ZoneDangereuse";
 import { FicheForm } from "@/components/admin/FicheForm";
 import { StagesManager } from "@/components/admin/StagesManager";
 import { TemoignagesManager } from "@/components/admin/TemoignagesManager";
@@ -8,7 +10,7 @@ import { FicheTabs } from "@/components/shared/FicheTabs";
 import { db } from "@/lib/db";
 import { champsManquants } from "@/lib/fiche";
 import { transmetteurs, users } from "@/lib/db/schema";
-import { deleteFiche, updateFiche } from "@/app/admin/actions";
+import { updateFiche } from "@/app/admin/actions";
 
 export default async function EditerFichePage({
   params,
@@ -39,7 +41,9 @@ export default async function EditerFichePage({
     : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    // pb-24 : de quoi ne pas masquer le bas de page derrière la barre
+    // d'enregistrement, fixée au bas de l'écran.
+    <div className="flex flex-col gap-6 pb-24">
       <div>
         <h1 className="mb-1 font-serif text-3xl font-semibold">{fiche.nom}</h1>
         <p className="text-sm text-muted-foreground">
@@ -55,6 +59,7 @@ export default async function EditerFichePage({
             <FicheForm
               mode="edit"
               manquants={champsManquants(fiche)}
+              bloquee={fiche.bloqueeLe !== null}
               compteLie={fiche.userId !== null}
               action={updateFiche.bind(null, fiche.id)}
               values={{
@@ -80,6 +85,15 @@ export default async function EditerFichePage({
               }}
             />
 
+          </div>
+        }
+        administration={
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Ces réglages ne sont visibles que par l&apos;association : le
+              transmetteur n&apos;y a pas accès depuis son espace.
+            </p>
+
             <CompteTransmetteur
               transmetteurId={fiche.id}
               email={fiche.email}
@@ -87,23 +101,13 @@ export default async function EditerFichePage({
               aUnMotDePasse={compte?.passwordHash != null}
             />
 
-            <section className="rounded-sm border border-border bg-secondary p-6">
-              <h2 className="mb-2 font-serif text-lg font-semibold">
-                Zone dangereuse
-              </h2>
-              <p className="mb-4 text-sm text-muted-foreground">
-                Supprimer cette fiche efface aussi ses stages et ses photos,
-                définitivement.
-              </p>
-              <form action={deleteFiche.bind(null, fiche.id)}>
-                <button
-                  type="submit"
-                  className="rounded-sm border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-accent"
-                >
-                  Supprimer la fiche
-                </button>
-              </form>
-            </section>
+            <BlocageFiche
+              transmetteurId={fiche.id}
+              nom={fiche.nom}
+              bloquee={fiche.bloqueeLe !== null}
+            />
+
+            <ZoneDangereuse transmetteurId={fiche.id} nom={fiche.nom} />
           </div>
         }
         stages={<StagesManager transmetteurId={fiche.id} stages={fiche.stages} />}

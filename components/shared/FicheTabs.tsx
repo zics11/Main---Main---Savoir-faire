@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type OngletId = "fiche" | "stages" | "temoignages";
+type OngletId = "fiche" | "stages" | "temoignages" | "administration";
 
 // Onglets d'édition d'une fiche, dans l'admin comme dans l'espace
 // transmetteur (sans témoignages : ils restent gérés par l'association).
@@ -14,12 +14,15 @@ export function FicheTabs({
   fiche,
   stages,
   temoignages,
+  administration,
 }: {
   nbStages: number;
   nbTemoignages?: number;
   fiche: React.ReactNode;
   stages: React.ReactNode;
   temoignages?: React.ReactNode;
+  /** Réglages réservés à l'association : absent de l'espace transmetteur. */
+  administration?: React.ReactNode;
 }) {
   const [actif, setActif] = useState<OngletId>("fiche");
 
@@ -29,6 +32,9 @@ export function FicheTabs({
     ...(temoignages
       ? [{ id: "temoignages" as const, label: "Témoignages", compte: nbTemoignages }]
       : []),
+    ...(administration
+      ? [{ id: "administration" as const, label: "Administration" }]
+      : []),
   ];
 
   return (
@@ -36,6 +42,9 @@ export function FicheTabs({
       <div role="tablist" className="mb-6 flex flex-wrap gap-2">
         {onglets.map((o) => {
           const on = actif === o.id;
+          // L'onglet des réglages de l'association porte sa propre couleur :
+          // ce qu'on y fait n'est pas du même ordre que le reste.
+          const admin = o.id === "administration";
           return (
             <button
               key={o.id}
@@ -43,10 +52,23 @@ export function FicheTabs({
               role="tab"
               aria-selected={on}
               onClick={() => setActif(o.id)}
+              style={
+                admin
+                  ? on
+                    ? {
+                        backgroundColor: "var(--admin)",
+                        borderColor: "var(--admin)",
+                        color: "#fff",
+                      }
+                    : { borderColor: "var(--admin-bord)", color: "var(--admin)" }
+                  : undefined
+              }
               className={`rounded-sm border px-5 py-2.5 text-sm font-semibold ${
-                on
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input bg-card text-foreground/80 hover:bg-accent"
+                admin
+                  ? "bg-[var(--admin-fond)]"
+                  : on
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-card text-foreground/80 hover:bg-accent"
               }`}
             >
               {o.label}
@@ -67,6 +89,11 @@ export function FicheTabs({
       {temoignages && (
         <div role="tabpanel" hidden={actif !== "temoignages"}>
           {temoignages}
+        </div>
+      )}
+      {administration && (
+        <div role="tabpanel" hidden={actif !== "administration"}>
+          {administration}
         </div>
       )}
     </div>

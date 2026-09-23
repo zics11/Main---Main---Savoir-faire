@@ -3,8 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { transmetteurs } from "@/lib/db/schema";
 import { DOMAINE_LABELS } from "@/lib/constants";
-import { champsManquants } from "@/lib/fiche";
-import { basculerBlocage, togglePubliee } from "./actions";
+import { togglePubliee } from "./actions";
 
 type Fiche = typeof transmetteurs.$inferSelect;
 
@@ -294,7 +293,7 @@ export default async function AdminPage({
       </form>
 
       <div className="overflow-hidden rounded-sm border border-border bg-card">
-        <div className="grid grid-cols-[1.4fr_1fr_100px_110px_110px_190px] gap-3 border-b border-border bg-secondary px-4 py-3 text-xs tracking-wide text-muted-foreground uppercase">
+        <div className="grid grid-cols-[1.4fr_1fr_100px_110px_110px_90px] gap-3 border-b border-border bg-secondary px-4 py-3 text-xs tracking-wide text-muted-foreground uppercase">
           {(
             [
               ["nom", "Fiche"],
@@ -319,7 +318,7 @@ export default async function AdminPage({
         {listees.map((f) => (
           <div
             key={f.id}
-            className={`grid grid-cols-[1.4fr_1fr_100px_110px_110px_190px] items-center gap-3 border-b border-border border-l-3 px-4 py-3 text-sm last:border-b-0 ${
+            className={`grid grid-cols-[1.4fr_1fr_100px_110px_110px_90px] items-center gap-3 border-b border-border border-l-3 px-4 py-3 text-sm last:border-b-0 ${
               f.publiee ? "border-l-transparent" : "border-l-primary bg-secondary/40"
             }`}
           >
@@ -348,24 +347,8 @@ export default async function AdminPage({
               >
                 Éditer
               </Link>
-              {!f.bloqueeLe && (f.publiee || champsManquants(f).length === 0) && (
-                <form action={togglePubliee.bind(null, f.id)}>
-                  <button
-                    type="submit"
-                    className="text-xs text-muted-foreground hover:text-primary"
-                  >
-                    {f.publiee ? "Masquer" : "Publier"}
-                  </button>
-                </form>
-              )}
-              <form action={basculerBlocage.bind(null, f.id)}>
-                <button
-                  type="submit"
-                  className="text-xs text-muted-foreground hover:text-destructive"
-                >
-                  {f.bloqueeLe ? "Débloquer" : "Bloquer"}
-                </button>
-              </form>
+              {/* Publier, masquer et bloquer se décident depuis la fiche
+                  elle-même, où l'on voit ce qu'on met en ligne. */}
             </div>
           </div>
         ))}

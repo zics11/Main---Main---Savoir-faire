@@ -29,7 +29,8 @@ export default async function MonEspacePage({
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 sm:px-12">
+      {/* pb-28 : la barre d'enregistrement est fixée au bas de l'écran. */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 pt-10 pb-28 sm:px-12">
         <div className="mb-2 text-xs tracking-wide text-primary uppercase">
           Mon espace · {DOMAINE_LABELS[fiche.domaine]}
         </div>

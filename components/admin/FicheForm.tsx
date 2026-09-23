@@ -186,6 +186,7 @@ export function FicheForm({
   compteLie = false,
   lienPublic,
   manquants = [],
+  bloquee = false,
 }: {
   mode: "create" | "edit";
   values?: FicheFormValues;
@@ -201,6 +202,8 @@ export function FicheForm({
   lienPublic?: string;
   /** Ce qu'il reste à remplir avant que la fiche puisse être publiée. */
   manquants?: string[];
+  /** Fiche suspendue par l'association : la publication est verrouillée. */
+  bloquee?: boolean;
 }) {
   const [etat, enregistrer, enCours] = useActionState(action, null);
   // Après une erreur, on repart de ce qui a été saisi plutôt que des valeurs
@@ -211,7 +214,7 @@ export function FicheForm({
   const estTransmetteur = espace === "transmetteur";
 
   return (
-    <form action={enregistrer} className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <form action={enregistrer} className="flex flex-col gap-6">
       <div className="flex flex-col gap-6">
         <section className="rounded-sm border border-border bg-card p-6">
           <h2 className="mb-4 font-serif text-xl font-semibold">Identité</h2>
@@ -372,49 +375,68 @@ export function FicheForm({
         </section>
       </div>
 
-      <aside className="flex flex-col gap-4">
-        <div className="rounded-sm border border-border bg-card p-6">
+      {/* Barre d'enregistrement fixée au bas de l'écran : elle reste sous la
+          main où qu'on soit dans la page, pas seulement dans le formulaire. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3 sm:px-8">
+        <div className="text-sm">
           {estTransmetteur ? (
-            <div className="text-sm">
-              <div className="mb-1 font-medium">
-                {v.publiee ? "Votre fiche est en ligne" : "Votre fiche n'est pas encore en ligne"}
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
+            <>
+              <span className="font-medium">
+                {v.publiee
+                  ? "Votre fiche est en ligne"
+                  : "Votre fiche n'est pas encore en ligne"}
+              </span>{" "}
+              <span className="text-muted-foreground">
                 {v.publiee
                   ? "Vos modifications sont visibles dès l'enregistrement."
                   : manquants.length
-                    ? `Avant sa mise en ligne par l'association, il reste à renseigner ${manquants.join(", ")}.`
-                    : "L'association la publiera. Vous pouvez la compléter en attendant."}
-              </p>
+                    ? `Il reste à renseigner ${manquants.join(", ")}.`
+                    : "L'association la publiera."}
+              </span>
               {v.publiee && lienPublic && (
                 <a
                   href={lienPublic}
                   target="_blank"
                   rel="noopener"
-                  className="mt-3 inline-block text-xs font-medium underline underline-offset-2"
+                  className="ml-2 font-medium underline underline-offset-2"
                 >
                   Voir ma fiche publique ↗
                 </a>
               )}
-            </div>
+            </>
           ) : (
             <>
-              <label className="flex items-center justify-between gap-3 text-sm">
+              <label className="flex items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  name="publiee"
+                  defaultChecked={v.publiee}
+                  disabled={bloquee || manquants.length > 0}
+                />
                 <span>Fiche visible sur le site</span>
-                <input type="checkbox" name="publiee" defaultChecked={v.publiee} />
               </label>
-              {manquants.length > 0 && (
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  Publication impossible tant qu&apos;il manque{" "}
-                  {manquants.join(", ")}.
+              {(bloquee || manquants.length > 0) && (
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {bloquee
+                    ? "Fiche bloquée : levez le blocage pour pouvoir la publier."
+                    : `Publication impossible tant qu'il manque ${manquants.join(", ")}.`}
                 </p>
               )}
             </>
           )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          {etat?.erreur && (
+            <p role="alert" className="text-sm text-destructive">
+              {etat.erreur}
+            </p>
+          )}
           <button
             type="submit"
             disabled={enCours}
-            className="mt-5 w-full rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+            className="rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
           >
             {enCours
               ? "Enregistrement…"
@@ -422,13 +444,9 @@ export function FicheForm({
                 ? "Créer la fiche"
                 : "Enregistrer"}
           </button>
-          {etat?.erreur && (
-            <p role="alert" className="mt-3 text-sm text-destructive">
-              {etat.erreur}
-            </p>
-          )}
         </div>
-      </aside>
+        </div>
+      </div>
     </form>
   );
 }
