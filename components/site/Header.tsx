@@ -43,7 +43,13 @@ export async function Header() {
 
         {session?.user?.role === "transmetteur" && (
           <Link href="/mes-stages" className="text-muted-foreground hover:text-primary">
-            Mes stages
+            Mon espace
+          </Link>
+        )}
+
+        {session?.user && (
+          <Link href="/mon-compte" className="text-muted-foreground hover:text-primary">
+            Mon compte
           </Link>
         )}
 

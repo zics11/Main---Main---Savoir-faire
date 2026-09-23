@@ -1,7 +1,7 @@
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Input } from "@/components/ui/input";
-import { requestMagicLink } from "./actions";
+import { loginWithPassword } from "./actions";
 
 export default async function ConnexionPage({
   searchParams,
@@ -15,31 +15,55 @@ export default async function ConnexionPage({
         <div className="mb-2 text-xs tracking-wider text-primary uppercase">
           Connexion
         </div>
-        <h1 className="mb-3 font-serif text-4xl font-semibold">
-          Recevoir mon lien de connexion
-        </h1>
+        <h1 className="mb-3 font-serif text-4xl font-semibold">Se connecter</h1>
         <p className="mb-8 text-sm leading-relaxed text-muted-foreground">
-          Saisissez votre adresse email. Pas de mot de passe : vous recevrez
-          un lien à usage unique pour vous connecter.
+          Avec l&apos;adresse email et le mot de passe reçus par email. Il n&apos;y
+          a pas d&apos;inscription libre : les comptes sont créés par
+          l&apos;association.
         </p>
 
-        <form action={requestMagicLink} className="flex flex-col gap-3">
+        <form action={loginWithPassword} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="text-muted-foreground">Adresse email</span>
-            <Input type="email" name="email" placeholder="vous@exemple.fr" required />
+            <Input
+              type="email"
+              name="email"
+              autoComplete="username"
+              placeholder="vous@exemple.fr"
+              required
+            />
           </label>
-          {erreur === "email" && (
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-muted-foreground">Mot de passe</span>
+            <Input
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          {erreur === "identifiants" && (
             <p className="text-sm text-destructive">
-              Entrez une adresse email valide.
+              Adresse email ou mot de passe incorrect.
+            </p>
+          )}
+          {erreur === "trop_de_tentatives" && (
+            <p className="text-sm text-destructive">
+              Trop de tentatives. Réessayez dans 15 minutes.
             </p>
           )}
           <button
             type="submit"
             className="mt-2 rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
           >
-            Recevoir le lien
+            Se connecter
           </button>
         </form>
+
+        <p className="mt-8 text-sm leading-relaxed text-muted-foreground">
+          Mot de passe oublié ? Demandez-en un nouveau à l&apos;association :
+          elle vous en envoie un par email en un clic.
+        </p>
       </main>
       <Footer />
     </div>

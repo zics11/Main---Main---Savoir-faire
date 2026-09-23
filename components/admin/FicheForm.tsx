@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import type { FicheFormState } from "@/app/admin/actions";
 import { DOMAINE_LABELS } from "@/lib/constants";
 import { DOMAINES } from "@/lib/db/schema";
 import { PhotosField } from "@/components/shared/PhotosField";
@@ -14,13 +15,13 @@ export type FicheFormValues = {
   metier: string | null;
   histoire: string;
   domaine: (typeof DOMAINES)[number];
-  savoirFaire: string;
+  savoirFaire: string | null;
   siteWeb: string | null;
   reseauxSociaux: string | null;
   email: string;
   lat: number | null;
   lng: number | null;
-  lieuApproximatif: string;
+  lieuApproximatif: string | null;
   modalitesAccueil: string | null;
   hebergement: boolean;
   repas: boolean;
@@ -181,15 +182,36 @@ export function FicheForm({
   mode,
   values,
   action,
+  espace = "admin",
+  compteLie = false,
+  lienPublic,
+  manquants = [],
 }: {
   mode: "create" | "edit";
   values?: FicheFormValues;
-  action: (formData: FormData) => void | Promise<void>;
+  action: (
+    state: FicheFormState,
+    formData: FormData
+  ) => Promise<FicheFormState>;
+  /** "transmetteur" : sans la case de publication, email en lecture seule. */
+  espace?: "admin" | "transmetteur";
+  /** Un compte est rattaché : changer l'email déplace aussi la connexion. */
+  compteLie?: boolean;
+  /** Adresse de la fiche publique, affichée dans l'espace transmetteur. */
+  lienPublic?: string;
+  /** Ce qu'il reste à remplir avant que la fiche puisse être publiée. */
+  manquants?: string[];
 }) {
-  const v = values ?? EMPTY_VALUES;
+  const [etat, enregistrer, enCours] = useActionState(action, null);
+  // Après une erreur, on repart de ce qui a été saisi plutôt que des valeurs
+  // d'origine : React a vidé le formulaire en terminant l'action.
+  const v = etat?.valeurs
+    ? { ...(values ?? EMPTY_VALUES), ...etat.valeurs }
+    : (values ?? EMPTY_VALUES);
+  const estTransmetteur = espace === "transmetteur";
 
   return (
-    <form action={action} className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <form action={enregistrer} className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-6">
         <section className="rounded-sm border border-border bg-card p-6">
           <h2 className="mb-4 font-serif text-xl font-semibold">Identité</h2>
@@ -219,14 +241,20 @@ export function FicheForm({
                 className={inputClass}
               />
             </Field>
-            <Field label="Email de contact (compte transmetteur)">
+            <Field
+              label={
+                estTransmetteur
+                  ? "Email (identifiant de connexion)"
+                  : "Email de contact (compte transmetteur)"
+              }
+            >
               <input
                 type="email"
                 name="email"
                 defaultValue={v.email}
                 required
-                disabled={mode === "edit"}
-                className={inputClass}
+                disabled={estTransmetteur}
+                className={`${inputClass} disabled:bg-secondary disabled:text-muted-foreground`}
               />
             </Field>
             <Field label="Domaine">
@@ -241,8 +269,8 @@ export function FicheForm({
             <Field label="Savoir-faire transmis">
               <input
                 name="savoirFaire"
-                defaultValue={v.savoirFaire}
-                required
+                defaultValue={v.savoirFaire ?? ""}
+                placeholder="ex : pain au levain au four à bois"
                 className={inputClass}
               />
             </Field>
@@ -261,8 +289,10 @@ export function FicheForm({
             Si &quot;nom du lieu&quot; est renseigné, la fiche publique
             l&apos;affiche en grand titre, avec le nom et le métier en
             sous-titre. Sinon, seul le nom du transmetteur est affiché.
-            {mode === "edit" &&
-              " L'email n'est modifiable qu'à la création (il est lié au compte du transmetteur)."}
+            {estTransmetteur
+              ? " Pour changer d'adresse email, contactez l'association."
+              : compteLie &&
+                " L'email est aussi l'identifiant de connexion du transmetteur : le modifier déplace son compte sur la nouvelle adresse."}
           </p>
         </section>
 
@@ -271,8 +301,7 @@ export function FicheForm({
           <Field label="Lieu approximatif affiché publiquement">
             <input
               name="lieuApproximatif"
-              defaultValue={v.lieuApproximatif}
-              required
+              defaultValue={v.lieuApproximatif ?? ""}
               placeholder="ex : près de Durban-Corbières"
               className={inputClass}
             />
@@ -335,25 +364,69 @@ export function FicheForm({
             />
           </Field>
           <p className="mt-3 text-xs text-muted-foreground">
-            Le niveau et les formes de transmission (stage payant, immersion,
-            atelier…) se règlent au niveau de chaque stage, plus bas — un même
-            transmetteur peut proposer plusieurs types de stages.
+            Le niveau et les formes de transmission (stage payant, chantier
+            participatif…) se règlent pour chaque stage, dans l&apos;onglet
+            Stages — un même transmetteur peut proposer plusieurs types de
+            stages.
           </p>
         </section>
       </div>
 
       <aside className="flex flex-col gap-4">
         <div className="rounded-sm border border-border bg-card p-6">
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span>Fiche visible sur le site</span>
-            <input type="checkbox" name="publiee" defaultChecked={v.publiee} />
-          </label>
+          {estTransmetteur ? (
+            <div className="text-sm">
+              <div className="mb-1 font-medium">
+                {v.publiee ? "Votre fiche est en ligne" : "Votre fiche n'est pas encore en ligne"}
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {v.publiee
+                  ? "Vos modifications sont visibles dès l'enregistrement."
+                  : manquants.length
+                    ? `Avant sa mise en ligne par l'association, il reste à renseigner ${manquants.join(", ")}.`
+                    : "L'association la publiera. Vous pouvez la compléter en attendant."}
+              </p>
+              {v.publiee && lienPublic && (
+                <a
+                  href={lienPublic}
+                  target="_blank"
+                  rel="noopener"
+                  className="mt-3 inline-block text-xs font-medium underline underline-offset-2"
+                >
+                  Voir ma fiche publique ↗
+                </a>
+              )}
+            </div>
+          ) : (
+            <>
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>Fiche visible sur le site</span>
+                <input type="checkbox" name="publiee" defaultChecked={v.publiee} />
+              </label>
+              {manquants.length > 0 && (
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Publication impossible tant qu&apos;il manque{" "}
+                  {manquants.join(", ")}.
+                </p>
+              )}
+            </>
+          )}
           <button
             type="submit"
-            className="mt-5 w-full rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+            disabled={enCours}
+            className="mt-5 w-full rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
           >
-            {mode === "create" ? "Créer la fiche" : "Enregistrer"}
+            {enCours
+              ? "Enregistrement…"
+              : mode === "create"
+                ? "Créer la fiche"
+                : "Enregistrer"}
           </button>
+          {etat?.erreur && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {etat.erreur}
+            </p>
+          )}
         </div>
       </aside>
     </form>

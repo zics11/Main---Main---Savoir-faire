@@ -1,194 +1,294 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { stageDates, stages, temoignages, transmetteurs, users } from "@/lib/db/schema";
 import {
-  DOMAINES,
-  stageDates,
-  stages,
-  temoignages,
-  transmetteurs,
-  users,
-  type Domaine,
-} from "@/lib/db/schema";
-import { inviteEmailHtml, inviteEmailText } from "@/lib/email";
+  applyPhotos,
+  champsManquants,
+  champsSaisis,
+  ErreurFiche,
+  applyPortrait,
+  inviteTransmetteur,
+  optionalStr,
+  parseEmail,
+  parseFicheFields,
+  str,
+  uniqueSlug,
+} from "@/lib/fiche";
+import {
+  motDePasseEmailHtml,
+  motDePasseEmailText,
+} from "@/lib/email";
 import { sendMail } from "@/lib/mailer";
-import { slugify } from "@/lib/slug";
+import { genererMotDePasse, hacherMotDePasse } from "@/lib/password";
 import { deleteUploadedPhoto, saveUploadedPhoto } from "@/lib/upload";
 
-async function uniqueSlug(base: string, ignoreId?: string) {
-  const slugBase = slugify(base) || "transmetteur";
-  let slug = slugBase;
-  let i = 2;
-  while (
-    await db.query.transmetteurs.findFirst({
-      where: ignoreId
-        ? and(eq(transmetteurs.slug, slug), ne(transmetteurs.id, ignoreId))
-        : eq(transmetteurs.slug, slug),
-    })
-  ) {
-    slug = `${slugBase}-${i++}`;
-  }
-  return slug;
-}
+/**
+ * Erreur de saisie réaffichée dans le formulaire, avec les valeurs soumises :
+ * React réinitialise le formulaire après chaque action, il faut donc les lui
+ * redonner pour que l'utilisateur ne reperde pas ce qu'il a tapé.
+ */
+export type FicheFormState =
+  | { erreur: string; valeurs: ReturnType<typeof champsSaisis> }
+  | null;
 
-function str(formData: FormData, key: string) {
-  return String(formData.get(key) ?? "").trim();
-}
-
-function optionalStr(formData: FormData, key: string) {
-  const v = str(formData, key);
-  return v === "" ? null : v;
-}
-
-function parseFicheFields(formData: FormData) {
-  const domaine = str(formData, "domaine");
-  if (!DOMAINES.includes(domaine as Domaine)) {
-    throw new Error("Domaine invalide.");
-  }
-  const lat = Number(formData.get("lat"));
-  const lng = Number(formData.get("lng"));
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    throw new Error("Placez le point sur la carte.");
-  }
-
-  const nom = str(formData, "nom");
-  const savoirFaire = str(formData, "savoirFaire");
-  const lieuApproximatif = str(formData, "lieuApproximatif");
-  if (!nom || !savoirFaire || !lieuApproximatif) {
-    throw new Error(
-      "Le nom, le savoir-faire et le lieu approximatif sont obligatoires."
-    );
-  }
-
-  return {
-    nom,
-    nomLieu: optionalStr(formData, "nomLieu"),
-    metier: optionalStr(formData, "metier"),
-    histoire: str(formData, "histoire"),
-    domaine: domaine as Domaine,
-    savoirFaire,
-    siteWeb: optionalStr(formData, "siteWeb"),
-    reseauxSociaux: optionalStr(formData, "reseauxSociaux"),
-    lat,
-    lng,
-    lieuApproximatif,
-    modalitesAccueil: optionalStr(formData, "modalitesAccueil"),
-    hebergement: formData.get("hebergement") === "on",
-    repas: formData.get("repas") === "on",
-    typeRepas: optionalStr(formData, "typeRepas"),
-    publiee: formData.get("publiee") === "on",
-  };
-}
-
-// email is only ever set at creation (it's the transmetteur account's
-// identity) — the edit form disables it, so it's never re-parsed on update.
-function parseEmail(formData: FormData) {
-  const email = str(formData, "email").toLowerCase();
-  if (!email.includes("@")) throw new Error("Email invalide.");
-  return email;
-}
-
-async function applyPhotos(
-  transmetteurId: string,
-  existingPhotos: string[],
+export async function createFiche(
+  _prev: FicheFormState,
   formData: FormData
-) {
-  const keep = new Set(formData.getAll("keepPhotos").map(String));
-  const kept = existingPhotos.filter((p) => keep.has(p));
-  const removed = existingPhotos.filter((p) => !keep.has(p));
-
-  const newFiles = formData.getAll("photos").filter(
-    (f): f is File => f instanceof File && f.size > 0
-  );
-
-  const added: string[] = [];
-  for (const file of newFiles) {
-    added.push(await saveUploadedPhoto(file));
-  }
-
-  await Promise.all(removed.map((p) => deleteUploadedPhoto(p)));
-
-  await db
-    .update(transmetteurs)
-    .set({ photos: [...kept, ...added] })
-    .where(eq(transmetteurs.id, transmetteurId));
-}
-
-// Portrait du transmetteur : une seule photo, distincte de la galerie
-// ci-dessus. Un fichier envoyé remplace l'existant ; sinon "removePortrait"
-// permet de le retirer sans le remplacer.
-async function applyPortrait(
-  transmetteurId: string,
-  existingPortrait: string | null,
-  formData: FormData
-) {
-  const file = formData.get("portrait");
-  const remove = formData.get("removePortrait") === "on";
-
-  if (file instanceof File && file.size > 0) {
-    const saved = await saveUploadedPhoto(file);
-    if (existingPortrait) await deleteUploadedPhoto(existingPortrait);
-    await db
-      .update(transmetteurs)
-      .set({ photoPortrait: saved })
-      .where(eq(transmetteurs.id, transmetteurId));
-  } else if (remove && existingPortrait) {
-    await deleteUploadedPhoto(existingPortrait);
-    await db
-      .update(transmetteurs)
-      .set({ photoPortrait: null })
-      .where(eq(transmetteurs.id, transmetteurId));
-  }
-}
-
-export async function createFiche(formData: FormData) {
+): Promise<FicheFormState> {
   await requireAdmin();
-  const fields = parseFicheFields(formData);
-  const email = parseEmail(formData);
-  const slug = await uniqueSlug(fields.nom);
+  let ficheId: string;
+  try {
+    const fields = parseFicheFields(formData);
+    const email = parseEmail(formData);
+    const slug = await uniqueSlug(fields.nom);
 
-  const [fiche] = await db
-    .insert(transmetteurs)
-    .values({ ...fields, email, slug, photos: [] })
-    .returning();
+    const [fiche] = await db
+      .insert(transmetteurs)
+      .values({
+        ...fields,
+        // Une fiche naît incomplète : elle ne peut pas être publiée tout de
+        // suite, c'est l'admin qui le fera une fois remplie.
+        publiee: false,
+        email,
+        slug,
+        photos: [],
+      })
+      .returning();
 
-  await applyPhotos(fiche.id, [], formData);
-  await applyPortrait(fiche.id, null, formData);
-  await inviteTransmetteur(fiche.id, email, fields.nom);
+    await inviteTransmetteur(fiche.id, email, fields.nom);
+    ficheId = fiche.id;
+  } catch (e) {
+    if (e instanceof ErreurFiche) {
+      return { erreur: e.message, valeurs: champsSaisis(formData) };
+    }
+    throw e;
+  }
 
   revalidatePath("/admin");
-  redirect(`/admin/fiches/${fiche.id}`);
+  // Hors du try : redirect() fonctionne en levant une exception, qu'il ne faut
+  // pas confondre avec une erreur de saisie.
+  redirect(`/admin/fiches/${ficheId}`);
 }
 
-export async function updateFiche(transmetteurId: string, formData: FormData) {
+export async function updateFiche(
+  transmetteurId: string,
+  _prev: FicheFormState,
+  formData: FormData
+): Promise<FicheFormState> {
   await requireAdmin();
   const existing = await db.query.transmetteurs.findFirst({
     where: eq(transmetteurs.id, transmetteurId),
   });
-  if (!existing) throw new Error("Fiche introuvable.");
+  if (!existing) {
+    return { erreur: "Fiche introuvable.", valeurs: champsSaisis(formData) };
+  }
 
-  const fields = parseFicheFields(formData);
-  const slug =
-    fields.nom === existing.nom
-      ? existing.slug
-      : await uniqueSlug(fields.nom, transmetteurId);
+  let slug = existing.slug;
+  try {
+    const fields = parseFicheFields(formData);
+    const publiee = formData.get("publiee") === "on" && !existing.bloqueeLe;
+    // Rien d'incomplet ne part en ligne : sans savoir-faire, lieu ou point
+    // sur la carte, la fiche n'aurait rien à montrer ni où s'afficher.
+    if (publiee) {
+      const manquants = champsManquants(fields);
+      if (manquants.length) {
+        throw new ErreurFiche(
+          `Impossible de publier : il manque ${manquants.join(", ")}.`
+        );
+      }
+    }
+    // L'email de la fiche est aussi l'identifiant de connexion du
+    // transmetteur : le changer déplace aussi le compte rattaché.
+    const email = parseEmail(formData);
+    if (email !== existing.email && existing.userId) {
+      await deplacerCompte(existing.userId, email);
+    }
+    slug =
+      fields.nom === existing.nom
+        ? existing.slug
+        : await uniqueSlug(fields.nom, transmetteurId);
 
-  await db
-    .update(transmetteurs)
-    .set({ ...fields, slug, updatedAt: new Date() })
-    .where(eq(transmetteurs.id, transmetteurId));
+    await db
+      .update(transmetteurs)
+      .set({
+        ...fields,
+        publiee,
+        // Trace du premier accord : ensuite, le transmetteur peut retirer et
+        // remettre sa fiche en ligne sans nouvelle validation.
+        premiereValidationLe:
+          publiee && !existing.premiereValidationLe
+            ? new Date()
+            : existing.premiereValidationLe,
+        // Une demande en cours n'est soldée que si la publication change :
+        // éditer une fiche en attente ne doit pas effacer sa demande.
+        publicationDemandeeLe: publiee ? null : existing.publicationDemandeeLe,
+        email,
+        slug,
+        updatedAt: new Date(),
+      })
+      .where(eq(transmetteurs.id, transmetteurId));
 
-  await applyPhotos(transmetteurId, existing.photos, formData);
-  await applyPortrait(transmetteurId, existing.photoPortrait, formData);
+    await applyPhotos(transmetteurId, existing.photos, formData);
+    await applyPortrait(transmetteurId, existing.photoPortrait, formData);
+  } catch (e) {
+    if (e instanceof ErreurFiche) {
+      return { erreur: e.message, valeurs: champsSaisis(formData) };
+    }
+    throw e;
+  }
 
   revalidatePath("/admin");
   revalidatePath(`/admin/fiches/${transmetteurId}`);
+  revalidatePath(`/fiche/${existing.slug}`);
   revalidatePath(`/fiche/${slug}`);
+  revalidatePath("/mes-stages");
+  return null;
+}
+
+/**
+ * Fait suivre au compte rattaché la nouvelle adresse de la fiche : c'est son
+ * identifiant de connexion. Le mot de passe, lui, ne change pas.
+ */
+async function deplacerCompte(userId: string, email: string) {
+  const occupant = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+  if (occupant && occupant.id !== userId) {
+    throw new ErreurFiche(
+      `L'adresse ${email} est déjà celle d'un autre compte. Déliez d'abord la fiche, ou utilisez une autre adresse.`
+    );
+  }
+  await db
+    .update(users)
+    .set({ email })
+    .where(eq(users.id, userId));
+}
+
+export type InvitationState = { ok: boolean; message: string } | null;
+
+/**
+ * Suspend une fiche, ou lève la suspension. Une fiche bloquée quitte le site
+ * et le transmetteur ne peut ni la remettre en ligne ni redemander sa
+ * publication : seule l'association peut revenir en arrière.
+ */
+export async function basculerBlocage(transmetteurId: string) {
+  await requireAdmin();
+  const existing = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
+  });
+  if (!existing) return;
+
+  const blocage = existing.bloqueeLe === null;
+  await db
+    .update(transmetteurs)
+    .set({
+      bloqueeLe: blocage ? new Date() : null,
+      // Lever le blocage ne remet pas la fiche en ligne : c'est une décision
+      // à part, prise juste après si elle s'impose.
+      ...(blocage ? { publiee: false, publicationDemandeeLe: null } : {}),
+    })
+    .where(eq(transmetteurs.id, transmetteurId));
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  revalidatePath("/mes-stages");
+  revalidatePath(`/fiche/${existing.slug}`);
+}
+
+// Détache le compte de la fiche sans supprimer ni l'un ni l'autre : le
+// transmetteur perd l'accès à cette fiche, et l'email redevient librement
+// modifiable. Sert notamment à corriger une invitation envoyée par erreur.
+export async function delierCompte(
+  transmetteurId: string
+): Promise<InvitationState> {
+  await requireAdmin();
+  await db
+    .update(transmetteurs)
+    .set({ userId: null })
+    .where(eq(transmetteurs.id, transmetteurId));
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return { ok: true, message: "Compte délié de cette fiche." };
+}
+
+/**
+ * Tire un nouveau mot de passe et l'envoie directement au transmetteur.
+ *
+ * L'email part AVANT l'enregistrement : si l'envoi échoue, l'ancien mot de
+ * passe continue de fonctionner, plutôt que de laisser le transmetteur avec
+ * un mot de passe que personne ne connaît.
+ */
+export async function envoyerMotDePasseTransmetteur(
+  transmetteurId: string
+): Promise<InvitationState> {
+  await requireAdmin();
+  const fiche = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
+  });
+  if (!fiche?.userId) {
+    return {
+      ok: false,
+      message: "Cette fiche n'a pas encore de compte : envoyez d'abord l'invitation.",
+    };
+  }
+
+  const motDePasse = genererMotDePasse();
+  const url = new URL(
+    "/connexion",
+    process.env.AUTH_URL ?? "http://localhost:3000"
+  ).toString();
+
+  try {
+    await sendMail({
+      to: fiche.email,
+      subject: "Votre mot de passe Main à Main",
+      html: motDePasseEmailHtml(motDePasse, url),
+      text: motDePasseEmailText(motDePasse, url),
+    });
+  } catch (err) {
+    console.error(`Password email to ${fiche.email} failed to send:`, err);
+    return {
+      ok: false,
+      message: `L'email n'a pas pu partir : le mot de passe n'a pas été changé. Vérifiez l'adresse ${fiche.email}.`,
+    };
+  }
+
+  await db
+    .update(users)
+    .set({ passwordHash: await hacherMotDePasse(motDePasse) })
+    .where(eq(users.id, fiche.userId));
+
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return {
+    ok: true,
+    message: `Nouveau mot de passe envoyé à ${fiche.email}.`,
+  };
+}
+
+// Crée le compte du transmetteur (s'il n'existe pas) et (r)envoie
+// l'invitation — indispensable pour les fiches créées sans invitation.
+export async function inviterTransmetteur(
+  transmetteurId: string
+): Promise<InvitationState> {
+  await requireAdmin();
+  const fiche = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
+  });
+  if (!fiche) return { ok: false, message: "Fiche introuvable." };
+
+  const envoye = await inviteTransmetteur(fiche.id, fiche.email, fiche.nom);
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return envoye
+    ? { ok: true, message: `Invitation envoyée à ${fiche.email}.` }
+    : {
+        ok: false,
+        message: `Le compte est créé, mais l'email n'a pas pu partir. ${fiche.email} peut tout de même se connecter depuis la page Connexion.`,
+      };
 }
 
 export async function deleteFiche(transmetteurId: string) {
@@ -218,43 +318,25 @@ export async function togglePubliee(transmetteurId: string) {
     where: eq(transmetteurs.id, transmetteurId),
   });
   if (!existing) return;
+  // Même garde-fou que dans updateFiche : une fiche incomplète reste hors
+  // ligne, quel que soit le chemin emprunté.
+  if (existing.bloqueeLe) return;
+  if (!existing.publiee && champsManquants(existing).length) return;
   await db
     .update(transmetteurs)
-    .set({ publiee: !existing.publiee })
+    // La demande est tranchée dans les deux sens : publier y répond, masquer
+    // la retire (le transmetteur pourra en refaire une).
+    .set({
+      publiee: !existing.publiee,
+      publicationDemandeeLe: null,
+      premiereValidationLe:
+        !existing.publiee && !existing.premiereValidationLe
+          ? new Date()
+          : existing.premiereValidationLe,
+    })
     .where(eq(transmetteurs.id, transmetteurId));
   revalidatePath("/admin");
-}
-
-// Creates (or reuses) the transmetteur's user account and links it to the
-// fiche, then emails them so they can sign in via magic link.
-async function inviteTransmetteur(transmetteurId: string, email: string, ficheNom: string) {
-  let user = await db.query.users.findFirst({ where: eq(users.email, email) });
-  if (!user) {
-    [user] = await db
-      .insert(users)
-      .values({ email, role: "transmetteur" })
-      .returning();
-  }
-
-  await db
-    .update(transmetteurs)
-    .set({ userId: user.id })
-    .where(eq(transmetteurs.id, transmetteurId));
-
-  const url = new URL("/connexion", process.env.AUTH_URL ?? "http://localhost:3000");
-  try {
-    await sendMail({
-      to: email,
-      subject: "Votre fiche Main à Main est prête",
-      html: inviteEmailHtml(ficheNom, url.toString()),
-      text: inviteEmailText(ficheNom, url.toString()),
-    });
-  } catch (err) {
-    // The fiche and account are already created at this point — a down or
-    // misconfigured SMTP relay shouldn't block that. The admin can still
-    // tell the transmetteur to sign in manually with their email.
-    console.error(`Invitation email to ${email} failed to send:`, err);
-  }
+  revalidatePath("/mes-stages");
 }
 
 // ─── Stages (admin can manage any transmetteur's) ───

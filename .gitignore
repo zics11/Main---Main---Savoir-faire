@@ -49,3 +49,6 @@ next-env.d.ts
 # uploaded images (Docker volume in production)
 /uploads/*
 !/uploads/.gitkeep
+
+# Journal du serveur de dev lancé en arrière-plan
+.next-dev.log

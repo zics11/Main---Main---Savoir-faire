@@ -16,28 +16,48 @@ function layout(bodyHtml: string, ctaHref: string, ctaLabel: string) {
 </div>`.trim();
 }
 
-export function magicLinkEmailHtml(url: string) {
+export function inviteEmailHtml(ficheNom: string, activationUrl: string) {
   return layout(
-    "Cliquez sur le bouton ci-dessous pour vous connecter. Ce lien est valable 24 heures et ne peut servir qu'une fois.",
-    url,
+    `Votre fiche transmetteur — <strong>${escapeHtml(ficheNom)}</strong> — vous attend sur Main à Main. Commencez par choisir votre mot de passe : vous arriverez directement sur votre espace, où vous pourrez compléter votre présentation, vos photos et vos stages.<br><br>Ce lien est valable 14 jours. Ensuite, vous vous connecterez avec cette adresse email et le mot de passe choisi.`,
+    activationUrl,
+    "Choisir mon mot de passe"
+  );
+}
+
+export function inviteEmailText(ficheNom: string, activationUrl: string) {
+  return `Bienvenue sur Main à Main\n\nVotre fiche transmetteur (${ficheNom}) vous attend. Choisissez votre mot de passe pour accéder à votre espace :\n${activationUrl}\n\nCe lien est valable 14 jours. Ensuite, vous vous connecterez avec cette adresse email et le mot de passe choisi.`;
+}
+
+export function motDePasseEmailHtml(motDePasse: string, connexionUrl: string) {
+  return layout(
+    `Voici votre nouveau mot de passe pour Main à Main : <strong style="font-family:monospace;font-size:17px">${escapeHtml(motDePasse)}</strong><br><br>Connectez-vous avec votre adresse email et ce mot de passe. Vous pourrez le remplacer par celui de votre choix depuis « Mon compte ». Le précédent, s'il y en avait un, ne fonctionne plus.`,
+    connexionUrl,
     "Me connecter"
   );
 }
 
-export function magicLinkEmailText(url: string) {
-  return `Connexion à Main à Main\n\nCliquez sur ce lien pour vous connecter (valable 24h, usage unique) :\n${url}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.`;
+export function motDePasseEmailText(motDePasse: string, connexionUrl: string) {
+  return `Votre nouveau mot de passe Main à Main\n\n${motDePasse}\n\nConnectez-vous avec votre adresse email et ce mot de passe :\n${connexionUrl}\n\nVous pourrez le remplacer depuis « Mon compte ». Le précédent, s'il y en avait un, ne fonctionne plus.`;
 }
 
-export function inviteEmailHtml(ficheNom: string, connexionUrl: string) {
+export function demandePublicationEmailHtml(
+  ficheNom: string,
+  email: string,
+  ficheUrl: string
+) {
   return layout(
-    `Une fiche transmetteur — <strong>${ficheNom}</strong> — vient d'être créée pour vous sur Main à Main. Connectez-vous avec cette adresse email pour gérer vos dates de stage.`,
-    connexionUrl,
-    "Accéder à mon espace"
+    `<strong>${escapeHtml(ficheNom)}</strong> (${escapeHtml(email)}) demande la mise en ligne de sa fiche. Elle est complète et n'attend que votre accord — elle reste invisible du public d'ici là.`,
+    ficheUrl,
+    "Voir la fiche"
   );
 }
 
-export function inviteEmailText(ficheNom: string, connexionUrl: string) {
-  return `Bienvenue sur Main à Main\n\nUne fiche transmetteur (${ficheNom}) vient d'être créée pour vous. Connectez-vous avec cette adresse email pour gérer vos dates de stage :\n${connexionUrl}`;
+export function demandePublicationEmailText(
+  ficheNom: string,
+  email: string,
+  ficheUrl: string
+) {
+  return `Demande de publication\n\n${ficheNom} (${email}) demande la mise en ligne de sa fiche. Elle reste invisible du public tant que vous ne l'avez pas publiée.\n\n${ficheUrl}`;
 }
 
 function escapeHtml(s: string) {

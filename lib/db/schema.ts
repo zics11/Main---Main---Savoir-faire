@@ -2,13 +2,10 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
-  primaryKey,
   real,
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
-import type { AdapterAccountType } from "next-auth/adapters";
-
 // ─── Enums (application-level, enforced via TS + SQLite CHECK through `enum`) ───
 
 export const ROLES = ["admin", "transmetteur"] as const;
@@ -22,10 +19,10 @@ export const DOMAINES = [
 ] as const;
 export type Domaine = (typeof DOMAINES)[number];
 
-// ─── Auth.js tables (shape required by @auth/drizzle-adapter's SQLite adapter) ───
-// We define these ourselves (instead of using the adapter's defaults) only to
-// add the `role` column on `users`. Column names are snake_case in SQL, but the
-// JS property names below must stay exactly as the adapter expects them.
+// ─── Comptes ───
+// La connexion se fait par email + mot de passe (voir lib/auth.ts) : cette
+// table suffit. Les tables accounts / sessions / verification_tokens de
+// Auth.js ont été supprimées avec la connexion par lien.
 
 export const users = sqliteTable("users", {
   id: text("id")
@@ -36,49 +33,16 @@ export const users = sqliteTable("users", {
   emailVerified: integer("email_verified", { mode: "timestamp_ms" }),
   image: text("image"),
   role: text("role", { enum: ROLES }).notNull().default("transmetteur"),
+  /** Empreinte scrypt (voir lib/password.ts). Nulle = compte sans mot de
+   *  passe, donc hors d'état de se connecter : l'admin lui en envoie un
+   *  depuis sa fiche, ou `npm run admin:mot-de-passe` pour un admin. */
+  passwordHash: text("password_hash"),
+  /** Empreinte SHA-256 du jeton d'accueil (voir lib/activation.ts) : il ouvre
+   *  la page où le transmetteur choisit son premier mot de passe. Effacé dès
+   *  qu'il a servi. */
+  activationToken: text("activation_token"),
+  activationExpires: integer("activation_expires", { mode: "timestamp_ms" }),
 });
-
-export const accounts = sqliteTable(
-  "accounts",
-  {
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").$type<AdapterAccountType>().notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("provider_account_id").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
-  },
-  (account) => [
-    primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  ]
-);
-
-export const sessions = sqliteTable("sessions", {
-  sessionToken: text("session_token").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
-});
-
-export const verificationTokens = sqliteTable(
-  "verification_tokens",
-  {
-    identifier: text("identifier").notNull(),
-    token: text("token").notNull(),
-    expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
-  },
-  (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
-);
 
 // ─── Domain tables ───
 
@@ -103,7 +67,10 @@ export const transmetteurs = sqliteTable(
     slug: text("slug").notNull().unique(),
     histoire: text("histoire").notNull().default(""),
     domaine: text("domaine", { enum: DOMAINES }).notNull(),
-    savoirFaire: text("savoir_faire").notNull(),
+    // Facultatifs à la création : l'admin ne saisit que le nom et l'email,
+    // le transmetteur complète ensuite depuis son espace. La publication,
+    // elle, exige que tout soit rempli (voir champsManquants dans lib/fiche).
+    savoirFaire: text("savoir_faire"),
     // Relative paths under /uploads, e.g. ["/uploads/abc123.webp"]
     photos: text("photos", { mode: "json" })
       .$type<string[]>()
@@ -116,9 +83,9 @@ export const transmetteurs = sqliteTable(
     siteWeb: text("site_web"),
     reseauxSociaux: text("reseaux_sociaux"),
     email: text("email").notNull(),
-    lat: real("lat").notNull(),
-    lng: real("lng").notNull(),
-    lieuApproximatif: text("lieu_approximatif").notNull(),
+    lat: real("lat"),
+    lng: real("lng"),
+    lieuApproximatif: text("lieu_approximatif"),
     modalitesAccueil: text("modalites_accueil"),
     hebergement: integer("hebergement", { mode: "boolean" })
       .notNull()
@@ -128,6 +95,22 @@ export const transmetteurs = sqliteTable(
     // Toggle kept from the legacy admin ("fiche visible" switch) so a fiche
     // can be hidden from the public site without deleting it.
     publiee: integer("publiee", { mode: "boolean" }).notNull().default(true),
+    // Date à laquelle le transmetteur a demandé la mise en ligne. Distingue
+    // une fiche encore en cours de remplissage d'une fiche qui attend la
+    // décision de l'association. Remise à null dès qu'elle est tranchée.
+    publicationDemandeeLe: integer("publication_demandee_le", {
+      mode: "timestamp_ms",
+    }),
+    // Date de la première mise en ligne par l'association. Une fois donnée,
+    // cet accord vaut pour la suite : le transmetteur peut retirer puis
+    // remettre sa fiche en ligne sans repasser par une demande.
+    premiereValidationLe: integer("premiere_validation_le", {
+      mode: "timestamp_ms",
+    }),
+    // Suspension décidée par l'association : la fiche sort du site et le
+    // transmetteur ne peut ni la remettre en ligne ni redemander sa
+    // publication tant que le blocage tient.
+    bloqueeLe: integer("bloquee_le", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),

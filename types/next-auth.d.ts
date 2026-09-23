@@ -13,8 +13,8 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/adapters" {
-  interface AdapterUser {
+declare module "@auth/core/jwt" {
+  interface JWT {
     role: Role;
   }
 }

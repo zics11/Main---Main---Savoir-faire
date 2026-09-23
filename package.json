@@ -14,10 +14,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "tsx scripts/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "admin:mot-de-passe": "tsx --env-file=.env.local scripts/mot-de-passe-admin.ts"
   },
   "dependencies": {
-    "@auth/drizzle-adapter": "1.11.3",
     "@base-ui/react": "1.7.0",
     "better-sqlite3": "13.0.3",
     "class-variance-authority": "0.7.1",

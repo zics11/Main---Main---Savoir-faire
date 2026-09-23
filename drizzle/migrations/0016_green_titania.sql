@@ -1,0 +1,1 @@
+ALTER TABLE `transmetteurs` ADD `bloquee_le` integer;

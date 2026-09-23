@@ -10,6 +10,14 @@ function formesProposees(stages: { type: string | null }[]) {
   return [...new Set(stages.map((s) => s.type).filter((t) => t !== null))];
 }
 
+/** Fiche placée sur la carte — les coordonnées sont nulles tant qu'elle est
+ *  en cours de remplissage. */
+function estSituee<T extends { lat: number | null; lng: number | null }>(
+  t: T
+): t is T & { lat: number; lng: number } {
+  return t.lat !== null && t.lng !== null;
+}
+
 export async function getPublishedTransmetteurs(): Promise<
   TransmetteurPoint[]
 > {
@@ -20,14 +28,16 @@ export async function getPublishedTransmetteurs(): Promise<
     },
   });
 
-  return rows.map((t) => ({
+  // Une fiche publiée est forcément complète (la publication l'exige) ; ce
+  // filtre ne fait que le prouver au typage, et protège la carte au cas où.
+  return rows.filter(estSituee).map((t) => ({
     id: t.id,
     slug: t.slug,
     nom: t.nom,
     domaine: t.domaine,
-    savoirFaire: t.savoirFaire,
+    savoirFaire: t.savoirFaire ?? "",
     photo: t.photos[0] ?? null,
-    lieuApproximatif: t.lieuApproximatif,
+    lieuApproximatif: t.lieuApproximatif ?? "",
     lat: t.lat,
     lng: t.lng,
     hebergement: t.hebergement,
@@ -69,33 +79,39 @@ export async function getUpcomingStages(): Promise<UpcomingStage[]> {
     },
   });
 
-  return rows
-    .filter((d) => d.stage.transmetteur.publiee)
-    .map((d) => ({
-      id: d.id,
-      stageId: d.stage.id,
-      titre: d.stage.titre,
-      type: d.stage.type,
-      niveau: d.stage.niveau,
-      prix: d.stage.prix,
-      description: d.stage.description,
-      photo: d.stage.photos[0] ?? d.stage.transmetteur.photos[0] ?? null,
-      dateDebut: d.dateDebut,
-      dateFin: d.dateFin,
-      places: d.places,
-      inscrits: d.inscrits,
-      transmetteur: {
-        id: d.stage.transmetteur.id,
-        slug: d.stage.transmetteur.slug,
-        nom: d.stage.transmetteur.nom,
-        domaine: d.stage.transmetteur.domaine,
-        savoirFaire: d.stage.transmetteur.savoirFaire,
-        photo: d.stage.transmetteur.photos[0] ?? null,
-        lieuApproximatif: d.stage.transmetteur.lieuApproximatif,
-        lat: d.stage.transmetteur.lat,
-        lng: d.stage.transmetteur.lng,
-        hebergement: d.stage.transmetteur.hebergement,
-        types: formesProposees(d.stage.transmetteur.stages),
+  // flatMap plutôt que filter + map : c'est ce qui permet au typage de voir
+  // que les coordonnées du transmetteur retenu ne sont plus nulles.
+  return rows.flatMap((d) => {
+    const t = d.stage.transmetteur;
+    if (!t.publiee || !estSituee(t)) return [];
+    return [
+      {
+        id: d.id,
+        stageId: d.stage.id,
+        titre: d.stage.titre,
+        type: d.stage.type,
+        niveau: d.stage.niveau,
+        prix: d.stage.prix,
+        description: d.stage.description,
+        photo: d.stage.photos[0] ?? t.photos[0] ?? null,
+        dateDebut: d.dateDebut,
+        dateFin: d.dateFin,
+        places: d.places,
+        inscrits: d.inscrits,
+        transmetteur: {
+          id: t.id,
+          slug: t.slug,
+          nom: t.nom,
+          domaine: t.domaine,
+          savoirFaire: t.savoirFaire ?? "",
+          photo: t.photos[0] ?? null,
+          lieuApproximatif: t.lieuApproximatif ?? "",
+          lat: t.lat,
+          lng: t.lng,
+          hebergement: t.hebergement,
+          types: formesProposees(t.stages),
+        },
       },
-    }));
+    ];
+  });
 }

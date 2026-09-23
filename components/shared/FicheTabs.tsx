@@ -4,10 +4,11 @@ import { useState } from "react";
 
 type OngletId = "fiche" | "stages" | "temoignages";
 
-// Les trois panneaux restent montés (simplement masqués) : passer d'un
-// onglet à l'autre ne doit pas faire perdre ce qui a été saisi dans les
-// formulaires d'un autre onglet.
-export function AdminTabs({
+// Onglets d'édition d'une fiche, dans l'admin comme dans l'espace
+// transmetteur (sans témoignages : ils restent gérés par l'association).
+// Les panneaux restent montés (simplement masqués) : passer d'un onglet à
+// l'autre ne doit pas faire perdre ce qui a été saisi dans un autre.
+export function FicheTabs({
   nbStages,
   nbTemoignages,
   fiche,
@@ -15,17 +16,19 @@ export function AdminTabs({
   temoignages,
 }: {
   nbStages: number;
-  nbTemoignages: number;
+  nbTemoignages?: number;
   fiche: React.ReactNode;
   stages: React.ReactNode;
-  temoignages: React.ReactNode;
+  temoignages?: React.ReactNode;
 }) {
   const [actif, setActif] = useState<OngletId>("fiche");
 
   const onglets: { id: OngletId; label: string; compte?: number }[] = [
     { id: "fiche", label: "Fiche" },
     { id: "stages", label: "Stages", compte: nbStages },
-    { id: "temoignages", label: "Témoignages", compte: nbTemoignages },
+    ...(temoignages
+      ? [{ id: "temoignages" as const, label: "Témoignages", compte: nbTemoignages }]
+      : []),
   ];
 
   return (
@@ -61,9 +64,11 @@ export function AdminTabs({
       <div role="tabpanel" hidden={actif !== "stages"}>
         {stages}
       </div>
-      <div role="tabpanel" hidden={actif !== "temoignages"}>
-        {temoignages}
-      </div>
+      {temoignages && (
+        <div role="tabpanel" hidden={actif !== "temoignages"}>
+          {temoignages}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { AdminTabs } from "@/components/admin/AdminTabs";
+import { CompteTransmetteur } from "@/components/admin/CompteTransmetteur";
 import { FicheForm } from "@/components/admin/FicheForm";
 import { StagesManager } from "@/components/admin/StagesManager";
 import { TemoignagesManager } from "@/components/admin/TemoignagesManager";
+import { FicheTabs } from "@/components/shared/FicheTabs";
 import { db } from "@/lib/db";
-import { transmetteurs } from "@/lib/db/schema";
+import { champsManquants } from "@/lib/fiche";
+import { transmetteurs, users } from "@/lib/db/schema";
 import { deleteFiche, updateFiche } from "@/app/admin/actions";
 
 export default async function EditerFichePage({
@@ -28,20 +30,32 @@ export default async function EditerFichePage({
 
   if (!fiche) notFound();
 
+  // Sert seulement à dire si un mot de passe existe : il n'est jamais lisible.
+  const compte = fiche.userId
+    ? await db.query.users.findFirst({
+        where: eq(users.id, fiche.userId),
+        columns: { passwordHash: true },
+      })
+    : null;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="mb-1 font-serif text-3xl font-semibold">{fiche.nom}</h1>
-        <p className="text-sm text-muted-foreground">{fiche.savoirFaire}</p>
+        <p className="text-sm text-muted-foreground">
+          {fiche.savoirFaire ?? "Fiche en cours de remplissage"}
+        </p>
       </div>
 
-      <AdminTabs
+      <FicheTabs
         nbStages={fiche.stages.length}
         nbTemoignages={fiche.temoignages.length}
         fiche={
           <div className="flex flex-col gap-8">
             <FicheForm
               mode="edit"
+              manquants={champsManquants(fiche)}
+              compteLie={fiche.userId !== null}
               action={updateFiche.bind(null, fiche.id)}
               values={{
                 nom: fiche.nom,
@@ -64,6 +78,13 @@ export default async function EditerFichePage({
                 photos: fiche.photos,
                 photoPortrait: fiche.photoPortrait,
               }}
+            />
+
+            <CompteTransmetteur
+              transmetteurId={fiche.id}
+              email={fiche.email}
+              compteLie={fiche.userId !== null}
+              aUnMotDePasse={compte?.passwordHash != null}
             />
 
             <section className="rounded-sm border border-border bg-secondary p-6">

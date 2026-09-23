@@ -1,0 +1,1 @@
+ALTER TABLE `transmetteurs` ADD `publication_demandee_le` integer;

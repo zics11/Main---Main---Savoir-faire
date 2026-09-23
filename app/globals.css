@@ -56,6 +56,18 @@
   --destructive-foreground: #faf8f4;
   --success: #eef3ec;
   --success-foreground: #4a6741;
+  /* Une couleur par état de fiche (admin) : la pastille du statut et son
+     onglet partagent la même, pour qu'on les associe d'un coup d'œil. */
+  --statut-en-ligne: #4a6741;
+  --statut-en-ligne-fond: #eef3ec;
+  --statut-a-valider: #9a6212;
+  --statut-a-valider-fond: #f8ecd9;
+  --statut-hors-ligne: #4d6072;
+  --statut-hors-ligne-fond: #e9eef3;
+  --statut-en-cours: #7a7264;
+  --statut-en-cours-fond: #f2efe8;
+  --statut-bloquee: #9d2f2f;
+  --statut-bloquee-fond: #f8e7e4;
   --border: #e8e2d6;
   --input: #d5cdbd;
   --ring: #a3512a;

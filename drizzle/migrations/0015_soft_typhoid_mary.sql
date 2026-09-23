@@ -1,0 +1,1 @@
+ALTER TABLE `transmetteurs` ADD `premiere_validation_le` integer;

@@ -20,6 +20,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           <Link href="/" className="text-[#cfc8bb]">
             Voir le site public
           </Link>
+          <Link href="/mon-compte" className="text-[#cfc8bb] hover:text-[#faf8f4]">
+            Mon compte
+          </Link>
           <form
             action={async () => {
               "use server";

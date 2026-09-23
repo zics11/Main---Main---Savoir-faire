@@ -35,3 +35,6 @@ export const NIVEAUX_STAGE = [
 ] as const;
 
 export { DOMAINES };
+
+/** Longueur minimale d'un mot de passe de connexion (admin et transmetteurs). */
+export const LONGUEUR_MIN_MOT_DE_PASSE = 12;

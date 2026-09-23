@@ -1,7 +1,7 @@
 // Seeds the local database with the real categories and example fiches
 // reused from the legacy static site (see legacy-html/), so the app has
 // realistic content to develop against. Safe to re-run: it wipes and
-// re-inserts the domain tables (never touches users/accounts/sessions).
+// re-inserts the domain tables (never touches the users table).
 import { db } from "../lib/db";
 import { stageDates, stages, temoignages, transmetteurs } from "../lib/db/schema";
 

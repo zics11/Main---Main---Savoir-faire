@@ -35,6 +35,16 @@ export default async function FichePage({
   });
 
   if (!fiche) notFound();
+  // Une fiche publiée est forcément complète (la publication l'exige), mais
+  // le typage ne le sait pas : on le vérifie plutôt que de forcer le type.
+  if (
+    fiche.savoirFaire === null ||
+    fiche.lieuApproximatif === null ||
+    fiche.lat === null ||
+    fiche.lng === null
+  ) {
+    notFound();
+  }
 
   const stagesAvecDates = await db.query.stages.findMany({
     where: eq(stages.transmetteurId, fiche.id),
