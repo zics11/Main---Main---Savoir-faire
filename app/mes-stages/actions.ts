@@ -10,6 +10,7 @@ import { stageDates, stages, transmetteurs, users } from "@/lib/db/schema";
 import {
   applyPhotos,
   champsManquants,
+  champsManquantsDemande,
   champsSaisis,
   ErreurFiche,
   applyPortrait,
@@ -154,11 +155,11 @@ export async function demanderPublication(): Promise<DemandeState> {
     return { ok: false, message: "Votre fiche est déjà en ligne." };
   }
 
-  const manquants = champsManquants(fiche);
+  const manquants = champsManquantsDemande(fiche);
   if (manquants.length) {
     return {
       ok: false,
-      message: `Complétez d'abord ${manquants.join(", ")}.`,
+      message: `Demande impossible : votre fiche est incomplète. Il manque encore ${manquants.join(", ")}.`,
     };
   }
 

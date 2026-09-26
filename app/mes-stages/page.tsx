@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import Link from "next/link";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { FicheForm } from "@/components/admin/FicheForm";
@@ -9,7 +10,7 @@ import { FicheTabs } from "@/components/shared/FicheTabs";
 import { DOMAINE_LABELS } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { requireMyTransmetteur } from "@/lib/dal";
-import { champsManquants } from "@/lib/fiche";
+import { champsManquants, champsManquantsDemande } from "@/lib/fiche";
 import { stages } from "@/lib/db/schema";
 import { updateMyFiche } from "./actions";
 
@@ -36,18 +37,31 @@ export default async function MonEspacePage({
         </div>
         <h1 className="mb-2 font-serif text-3xl font-semibold">{fiche.nom}</h1>
         <p className="mb-8 text-sm text-muted-foreground">
-          Modifiez ici votre fiche et vos stages. Les témoignages sont
-          ajoutés par l&apos;association.
+          Modifiez ici votre fiche et vos stages. Les témoignages sont ajoutés
+          par l&apos;association. Votre adresse email et votre mot de passe se
+          changent depuis{" "}
+          <Link href="/mon-compte" className="underline underline-offset-2">
+            Mon compte
+          </Link>
+          .
         </p>
 
-        {bienvenue === "1" && <PanneauAccueil publiee={fiche.publiee} />}
+        {/* Affiché tant que la fiche n'est pas en ligne : il disparaît de
+            lui-même une fois la demande validée. */}
+        {!fiche.publiee && !fiche.bloqueeLe && (
+          <PanneauAccueil
+            premiereVisite={bienvenue === "1"}
+            demandeEnvoyee={fiche.publicationDemandeeLe !== null}
+            manquants={champsManquantsDemande(fiche)}
+          />
+        )}
 
         <DemandePublication
           publiee={fiche.publiee}
           demandeeLe={fiche.publicationDemandeeLe}
           dejaValidee={fiche.premiereValidationLe !== null}
           bloquee={fiche.bloqueeLe !== null}
-          manquants={champsManquants(fiche)}
+          manquants={champsManquantsDemande(fiche)}
         />
 
         <FicheTabs

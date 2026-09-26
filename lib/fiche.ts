@@ -2,9 +2,15 @@ import "server-only";
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { DOMAINES, transmetteurs, users, type Domaine } from "@/lib/db/schema";
-import { inviteEmailHtml, inviteEmailText } from "@/lib/email";
+import {
+  ficheEnLigneHtml,
+  ficheEnLigneText,
+  inviteEmailHtml,
+  inviteEmailText,
+} from "@/lib/email";
 import { sendMail } from "@/lib/mailer";
 import { creerJetonActivation, lienActivation } from "@/lib/activation";
+import { PHOTOS_MINIMUM } from "@/lib/fiche-constantes";
 import { slugify } from "@/lib/slug";
 import { deleteUploadedPhoto, saveUploadedPhoto } from "@/lib/upload";
 
@@ -149,6 +155,38 @@ export function champsManquants(fiche: {
   return manquants;
 }
 
+
+/**
+ * Ce qui manque pour qu'un transmetteur puisse demander la publication :
+ * tout ce qui n'est pas marqué optionnel, plus une galerie de photos.
+ *
+ * Plus exigeant que `champsManquants`, qui conditionne la mise en ligne par
+ * l'association : celle-ci garde la main sur les fiches d'archive, arrivées
+ * avant ces règles et souvent sans photos.
+ */
+export function champsManquantsDemande(fiche: {
+  savoirFaire: string | null;
+  lieuApproximatif: string | null;
+  lat: number | null;
+  lng: number | null;
+  histoire: string;
+  modalitesAccueil: string | null;
+  photoPortrait: string | null;
+  photos: string[];
+}) {
+  const manquants = champsManquants(fiche);
+  if (!fiche.histoire.trim()) manquants.push("votre présentation");
+  if (!fiche.modalitesAccueil?.trim()) manquants.push("les modalités d'accueil");
+  if (!fiche.photoPortrait) manquants.push("votre photo de portrait");
+  if (fiche.photos.length < PHOTOS_MINIMUM) {
+    const reste = PHOTOS_MINIMUM - fiche.photos.length;
+    manquants.push(
+      `${reste} photo${reste > 1 ? "s" : ""} de plus (${PHOTOS_MINIMUM} minimum)`
+    );
+  }
+  return manquants;
+}
+
 export function parseEmail(formData: FormData) {
   const email = str(formData, "email").toLowerCase();
   if (!email.includes("@")) throw new ErreurFiche("Email invalide.");
@@ -209,6 +247,31 @@ export async function applyPortrait(
 }
 
 /**
+ * Prévient le transmetteur que sa fiche vient d'être mise en ligne. L'échec
+ * d'envoi n'annule rien : la fiche est publiée, c'est l'essentiel.
+ */
+export async function prevenirMiseEnLigne(fiche: {
+  nom: string;
+  slug: string;
+  email: string;
+}) {
+  const url = new URL(
+    `/fiche/${fiche.slug}`,
+    process.env.AUTH_URL ?? "http://localhost:3000"
+  ).toString();
+  try {
+    await sendMail({
+      to: fiche.email,
+      subject: "Votre fiche est en ligne — Main à Main",
+      html: ficheEnLigneHtml(fiche.nom, url),
+      text: ficheEnLigneText(fiche.nom, url),
+    });
+  } catch (err) {
+    console.error(`Publication email to ${fiche.email} failed to send:`, err);
+  }
+}
+
+/**
  * Crée (ou réutilise) le compte lié à l'email de la fiche, le rattache à la
  * fiche, puis envoie l'email d'accueil : un lien où le transmetteur choisit
  * lui-même son mot de passe, avant d'arriver sur son espace.
@@ -248,5 +311,10 @@ export async function inviteTransmetteur(
     console.error(`Invitation email to ${email} failed to send:`, err);
     return false;
   }
+
+  await db
+    .update(transmetteurs)
+    .set({ invitationEnvoyeeLe: new Date() })
+    .where(eq(transmetteurs.id, transmetteurId));
   return true;
 }

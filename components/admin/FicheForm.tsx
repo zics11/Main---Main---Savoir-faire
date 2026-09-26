@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { FicheFormState } from "@/app/admin/actions";
 import { DOMAINE_LABELS } from "@/lib/constants";
+import { PHOTOS_MINIMUM } from "@/lib/fiche-constantes";
 import { DOMAINES } from "@/lib/db/schema";
 import { PhotosField } from "@/components/shared/PhotosField";
 import { validatePhotoFile } from "@/lib/photo-validation";
@@ -183,7 +184,6 @@ export function FicheForm({
   values,
   action,
   espace = "admin",
-  compteLie = false,
   lienPublic,
   manquants = [],
   bloquee = false,
@@ -196,8 +196,6 @@ export function FicheForm({
   ) => Promise<FicheFormState>;
   /** "transmetteur" : sans la case de publication, email en lecture seule. */
   espace?: "admin" | "transmetteur";
-  /** Un compte est rattaché : changer l'email déplace aussi la connexion. */
-  compteLie?: boolean;
   /** Adresse de la fiche publique, affichée dans l'espace transmetteur. */
   lienPublic?: string;
   /** Ce qu'il reste à remplir avant que la fiche puisse être publiée. */
@@ -208,8 +206,10 @@ export function FicheForm({
   const [etat, enregistrer, enCours] = useActionState(action, null);
   // Après une erreur, on repart de ce qui a été saisi plutôt que des valeurs
   // d'origine : React a vidé le formulaire en terminant l'action.
-  const v = etat?.valeurs
-    ? { ...(values ?? EMPTY_VALUES), ...etat.valeurs }
+  const erreur = etat && "erreur" in etat ? etat : null;
+  const info = etat && "info" in etat ? etat.info : null;
+  const v = erreur
+    ? { ...(values ?? EMPTY_VALUES), ...erreur.valeurs }
     : (values ?? EMPTY_VALUES);
   const estTransmetteur = espace === "transmetteur";
 
@@ -244,21 +244,12 @@ export function FicheForm({
                 className={inputClass}
               />
             </Field>
-            <Field
-              label={
-                estTransmetteur
-                  ? "Email (identifiant de connexion)"
-                  : "Email de contact (compte transmetteur)"
-              }
-            >
-              <input
-                type="email"
-                name="email"
-                defaultValue={v.email}
-                required
-                disabled={estTransmetteur}
-                className={`${inputClass} disabled:bg-secondary disabled:text-muted-foreground`}
-              />
+            <Field label="Email (identifiant de connexion)">
+              {/* Affiché seulement : changer l'adresse est un geste à part,
+                  confirmé par email (onglet Administration côté association). */}
+              <div className={`${inputClass} bg-secondary text-muted-foreground`}>
+                {v.email}
+              </div>
             </Field>
             <Field label="Domaine">
               <select name="domaine" defaultValue={v.domaine} className={inputClass}>
@@ -294,8 +285,7 @@ export function FicheForm({
             sous-titre. Sinon, seul le nom du transmetteur est affiché.
             {estTransmetteur
               ? " Pour changer d'adresse email, contactez l'association."
-              : compteLie &&
-                " L'email est aussi l'identifiant de connexion du transmetteur : le modifier déplace son compte sur la nouvelle adresse."}
+              : " L'adresse se change depuis l'onglet Administration : le transmetteur doit confirmer la nouvelle par email."}
           </p>
         </section>
 
@@ -330,7 +320,11 @@ export function FicheForm({
         </section>
 
         <section className="rounded-sm border border-border bg-card p-6">
-          <h2 className="mb-4 font-serif text-xl font-semibold">Photos</h2>
+          <h2 className="mb-1 font-serif text-xl font-semibold">Photos</h2>
+          <p className="mb-4 text-xs text-muted-foreground">
+            {PHOTOS_MINIMUM} photos minimum pour pouvoir demander la
+            publication de la fiche.
+          </p>
           <PhotosField existingPhotos={v.photos} />
         </section>
 
@@ -428,9 +422,14 @@ export function FicheForm({
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          {etat?.erreur && (
+          {erreur && (
             <p role="alert" className="text-sm text-destructive">
-              {etat.erreur}
+              {erreur.erreur}
+            </p>
+          )}
+          {info && (
+            <p role="status" className="max-w-md text-sm text-[#4f6b3a]">
+              {info}
             </p>
           )}
           <button

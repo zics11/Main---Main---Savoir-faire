@@ -61,7 +61,7 @@ export function DemandePublication({
       : demandeEnvoyee
         ? "L'association la relit et la met en ligne."
         : manquants.length
-          ? `Il reste à renseigner ${manquants.join(", ")}.`
+          ? `La demande de publication ne sera possible qu'une fois la fiche complète. Il manque encore : ${manquants.join(", ")}.`
           : "Elle est complète : demandez sa mise en ligne quand vous le souhaitez.";
 
   return (
@@ -100,6 +100,11 @@ export function DemandePublication({
               <button
                 type="submit"
                 disabled={demandeEnCours || manquants.length > 0}
+              title={
+                manquants.length
+                  ? `Fiche incomplète : il manque ${manquants.join(", ")}.`
+                  : undefined
+              }
                 className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-50"
               >
                 {demandeEnCours ? "Envoi…" : "Demander la publication"}

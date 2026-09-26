@@ -45,18 +45,6 @@ export async function verifierMotDePasse(motDePasse: string, empreinte: string) 
   return calculee.length === attendue.length && timingSafeEqual(calculee, attendue);
 }
 
-// Alphabet sans caractères ambigus (0/O, 1/l/I) : le mot de passe est lu à
-// voix haute ou recopié à la main au moins une fois.
-const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
-
-/** Mot de passe lisible, à afficher une seule fois puis à transmettre. */
-export function genererMotDePasse() {
-  const octets = randomBytes(16);
-  const lettres = [...octets].map((o) => ALPHABET[o % ALPHABET.length]);
-  // Groupé par 4 pour la lecture : "k7np-2rmq-vd48-xs9f".
-  return [0, 4, 8, 12].map((i) => lettres.slice(i, i + 4).join("")).join("-");
-}
-
 // Empreinte factice, vérifiée quand le compte n'existe pas ou n'a pas de mot
 // de passe : la réponse prend alors le même temps, et ne trahit pas quelles
 // adresses ont un compte.

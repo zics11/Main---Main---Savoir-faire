@@ -17,7 +17,14 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           </span>
         </div>
         <div className="flex items-center gap-6 text-sm">
-          <Link href="/" className="text-[#cfc8bb]">
+          {/* Retour à la liste : utile surtout depuis l'intérieur d'une fiche. */}
+          <Link href="/admin" className="text-[#cfc8bb] hover:text-[#faf8f4]">
+            Toutes les fiches
+          </Link>
+          <Link href="/admin/fiches/nouvelle" className="text-[#cfc8bb] hover:text-[#faf8f4]">
+            Créer une fiche
+          </Link>
+          <Link href="/" className="text-[#cfc8bb] hover:text-[#faf8f4]">
             Voir le site public
           </Link>
           <Link href="/mon-compte" className="text-[#cfc8bb] hover:text-[#faf8f4]">

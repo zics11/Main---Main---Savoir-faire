@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `totp_secret_en_attente` text;

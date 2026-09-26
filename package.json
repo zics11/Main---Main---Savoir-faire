@@ -15,7 +15,9 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "admin:mot-de-passe": "tsx --env-file=.env.local scripts/mot-de-passe-admin.ts"
+    "admin:mot-de-passe": "tsx --env-file=.env.local scripts/mot-de-passe-admin.ts",
+    "comptes:lier": "tsx --env-file=.env.local scripts/lier-comptes-manquants.ts",
+    "admin:creer": "tsx --env-file=.env.local scripts/creer-admin.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
@@ -28,6 +30,7 @@
     "next": "16.3.1",
     "next-auth": "5.0.0-beta.32",
     "nodemailer": "8.0.11",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.3",
@@ -42,6 +45,7 @@
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "20.19.43",
     "@types/nodemailer": "8.0.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@types/supercluster": "7.1.3",

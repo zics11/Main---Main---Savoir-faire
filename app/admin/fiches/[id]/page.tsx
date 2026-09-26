@@ -36,7 +36,10 @@ export default async function EditerFichePage({
   const compte = fiche.userId
     ? await db.query.users.findFirst({
         where: eq(users.id, fiche.userId),
-        columns: { passwordHash: true },
+        columns: {
+          passwordHash: true,
+          emailEnAttente: true,
+        },
       })
     : null;
 
@@ -60,7 +63,6 @@ export default async function EditerFichePage({
               mode="edit"
               manquants={champsManquants(fiche)}
               bloquee={fiche.bloqueeLe !== null}
-              compteLie={fiche.userId !== null}
               action={updateFiche.bind(null, fiche.id)}
               values={{
                 nom: fiche.nom,
@@ -97,8 +99,9 @@ export default async function EditerFichePage({
             <CompteTransmetteur
               transmetteurId={fiche.id}
               email={fiche.email}
-              compteLie={fiche.userId !== null}
               aUnMotDePasse={compte?.passwordHash != null}
+              emailEnAttente={compte?.emailEnAttente}
+              invitationEnvoyeeLe={fiche.invitationEnvoyeeLe}
             />
 
             <BlocageFiche

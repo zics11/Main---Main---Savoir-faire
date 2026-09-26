@@ -42,6 +42,30 @@ export const users = sqliteTable("users", {
    *  qu'il a servi. */
   activationToken: text("activation_token"),
   activationExpires: integer("activation_expires", { mode: "timestamp_ms" }),
+  /** Changement d'adresse demandé mais pas encore confirmé : tant que le
+   *  lien envoyé à cette nouvelle adresse n'a pas été cliqué, la connexion
+   *  reste l'ancienne. Évite d'enfermer quelqu'un dehors sur une faute de
+   *  frappe. */
+  emailEnAttente: text("email_en_attente"),
+  emailToken: text("email_token"),
+  emailTokenExpires: integer("email_token_expires", { mode: "timestamp_ms" }),
+  /** Secret partagé avec son application d'authentification (base32), une
+   *  fois l'activation confirmée. C'est `totpActiveLe` qui fait foi. */
+  totpSecret: text("totp_secret"),
+  /** Secret proposé pendant l'enrôlement, tant qu'aucun code ne l'a validé :
+   *  séparé du précédent pour qu'une activation abandonnée ne verrouille
+   *  rien et n'efface pas une protection déjà en place. */
+  totpSecretEnAttente: text("totp_secret_en_attente"),
+  totpActiveLe: integer("totp_active_le", { mode: "timestamp_ms" }),
+  /** Codes de secours restants, hachés comme des mots de passe. */
+  totpCodesSecours: text("totp_codes_secours", { mode: "json" })
+    .$type<string[]>()
+    .notNull()
+    .$defaultFn(() => []),
+  /** Jeton de récupération de mot de passe : le lien envoyé par email ouvre
+   *  la page où l'on en choisit un nouveau. Usage unique, 2 heures. */
+  reinitToken: text("reinit_token"),
+  reinitExpires: integer("reinit_expires", { mode: "timestamp_ms" }),
 });
 
 // ─── Domain tables ───
@@ -105,6 +129,11 @@ export const transmetteurs = sqliteTable(
     // cet accord vaut pour la suite : le transmetteur peut retirer puis
     // remettre sa fiche en ligne sans repasser par une demande.
     premiereValidationLe: integer("premiere_validation_le", {
+      mode: "timestamp_ms",
+    }),
+    // Date du dernier envoi du mail de première connexion, pour savoir si le
+    // transmetteur a déjà reçu son lien ou s'il attend encore.
+    invitationEnvoyeeLe: integer("invitation_envoyee_le", {
       mode: "timestamp_ms",
     }),
     // Suspension décidée par l'association : la fiche sort du site et le

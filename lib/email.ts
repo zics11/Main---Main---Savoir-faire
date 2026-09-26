@@ -28,18 +28,6 @@ export function inviteEmailText(ficheNom: string, activationUrl: string) {
   return `Bienvenue sur Main à Main\n\nVotre fiche transmetteur (${ficheNom}) vous attend. Choisissez votre mot de passe pour accéder à votre espace :\n${activationUrl}\n\nCe lien est valable 14 jours. Ensuite, vous vous connecterez avec cette adresse email et le mot de passe choisi.`;
 }
 
-export function motDePasseEmailHtml(motDePasse: string, connexionUrl: string) {
-  return layout(
-    `Voici votre nouveau mot de passe pour Main à Main : <strong style="font-family:monospace;font-size:17px">${escapeHtml(motDePasse)}</strong><br><br>Connectez-vous avec votre adresse email et ce mot de passe. Vous pourrez le remplacer par celui de votre choix depuis « Mon compte ». Le précédent, s'il y en avait un, ne fonctionne plus.`,
-    connexionUrl,
-    "Me connecter"
-  );
-}
-
-export function motDePasseEmailText(motDePasse: string, connexionUrl: string) {
-  return `Votre nouveau mot de passe Main à Main\n\n${motDePasse}\n\nConnectez-vous avec votre adresse email et ce mot de passe :\n${connexionUrl}\n\nVous pourrez le remplacer depuis « Mon compte ». Le précédent, s'il y en avait un, ne fonctionne plus.`;
-}
-
 export function demandePublicationEmailHtml(
   ficheNom: string,
   email: string,
@@ -58,6 +46,54 @@ export function demandePublicationEmailText(
   ficheUrl: string
 ) {
   return `Demande de publication\n\n${ficheNom} (${email}) demande la mise en ligne de sa fiche. Elle reste invisible du public tant que vous ne l'avez pas publiée.\n\n${ficheUrl}`;
+}
+
+export function alerteAdresseEmailHtml(nouvelle: string) {
+  return layout(
+    `Une demande de changement d'adresse vient d'être déposée sur votre compte Main à Main, vers <strong>${escapeHtml(nouvelle)}</strong>.<br><br><strong>Si ce n'est pas vous</strong>, prévenez l'association tout de suite : quelqu'un a peut-être accès à votre compte. Rien n'est changé pour l'instant, et vous continuez à vous connecter avec cette adresse.`,
+    new URL("/connexion", process.env.AUTH_URL ?? "http://localhost:3000").toString(),
+    "Accéder à mon espace"
+  );
+}
+
+export function alerteAdresseEmailText(nouvelle: string) {
+  return `Demande de changement d'adresse sur votre compte\n\nUne demande vers ${nouvelle} vient d'être déposée sur votre compte Main à Main.\n\nSi ce n'est pas vous, prévenez l'association tout de suite : quelqu'un a peut-être accès à votre compte. Rien n'est changé pour l'instant.`;
+}
+
+export function ficheEnLigneHtml(ficheNom: string, ficheUrl: string) {
+  return layout(
+    `Bonne nouvelle : votre fiche <strong>${escapeHtml(ficheNom)}</strong> est désormais en ligne sur Main à Main. Les apprenants peuvent la trouver et vous écrire.<br><br>Vous pouvez la modifier à tout moment depuis votre espace : vos changements sont visibles dès l'enregistrement.`,
+    ficheUrl,
+    "Voir ma fiche"
+  );
+}
+
+export function ficheEnLigneText(ficheNom: string, ficheUrl: string) {
+  return `Votre fiche est en ligne\n\nVotre fiche ${ficheNom} est désormais visible sur Main à Main :\n${ficheUrl}\n\nVous pouvez la modifier à tout moment depuis votre espace ; vos changements sont visibles dès l'enregistrement.`;
+}
+
+export function changementEmailHtml(ficheNom: string, url: string) {
+  return layout(
+    `Une nouvelle adresse email a été enregistrée pour votre espace Main à Main (<strong>${escapeHtml(ficheNom)}</strong>). Confirmez-la pour qu'elle devienne votre identifiant de connexion.<br><br>Tant que vous n'avez pas cliqué, votre ancienne adresse continue de fonctionner. Ce lien est valable 7 jours.`,
+    url,
+    "Confirmer cette adresse"
+  );
+}
+
+export function changementEmailText(ficheNom: string, url: string) {
+  return `Confirmez votre nouvelle adresse email\n\nUne nouvelle adresse a été enregistrée pour votre espace Main à Main (${ficheNom}). Confirmez-la pour qu'elle devienne votre identifiant de connexion :\n${url}\n\nTant que vous n'avez pas cliqué, votre ancienne adresse continue de fonctionner. Lien valable 7 jours.`;
+}
+
+export function reinitialisationHtml(url: string) {
+  return layout(
+    `Vous avez demandé à choisir un nouveau mot de passe pour votre espace Main à Main. Ce lien est valable 2 heures et ne sert qu'une fois.<br><br>Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valable.`,
+    url,
+    "Choisir un nouveau mot de passe"
+  );
+}
+
+export function reinitialisationText(url: string) {
+  return `Nouveau mot de passe Main à Main\n\nVous avez demandé à choisir un nouveau mot de passe. Ce lien est valable 2 heures et ne sert qu'une fois :\n${url}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valable.`;
 }
 
 function escapeHtml(s: string) {

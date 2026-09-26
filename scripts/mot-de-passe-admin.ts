@@ -8,40 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
 import { users } from "../lib/db/schema";
 import { hacherMotDePasse, LONGUEUR_MIN_MOT_DE_PASSE } from "../lib/password";
-
-const CTRL_C = String.fromCharCode(3);
-const RETOUR_ARRIERE = [String.fromCharCode(127), String.fromCharCode(8)];
-
-function saisieMasquee(question: string) {
-  return new Promise<string>((resolve) => {
-    const stdin = process.stdin;
-    process.stdout.write(question);
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding("utf8");
-
-    let valeur = "";
-    const surTouche = (touches: string) => {
-      for (const c of touches) {
-        if (c === "\r" || c === "\n") {
-          stdin.setRawMode(false);
-          stdin.pause();
-          stdin.off("data", surTouche);
-          process.stdout.write("\n");
-          return resolve(valeur);
-        }
-        if (c === CTRL_C) {
-          stdin.setRawMode(false);
-          process.stdout.write("\n");
-          process.exit(1);
-        }
-        if (RETOUR_ARRIERE.includes(c)) valeur = valeur.slice(0, -1);
-        else valeur += c;
-      }
-    };
-    stdin.on("data", surTouche);
-  });
-}
+import { demanderMotDePasse } from "./saisie-masquee";
 
 async function main() {
   const email = process.argv[2]?.trim().toLowerCase();
@@ -60,15 +27,7 @@ async function main() {
     process.exit(1);
   }
 
-  const motDePasse = await saisieMasquee("Nouveau mot de passe : ");
-  if (motDePasse.length < LONGUEUR_MIN_MOT_DE_PASSE) {
-    console.error(`Trop court : ${LONGUEUR_MIN_MOT_DE_PASSE} caractères minimum.`);
-    process.exit(1);
-  }
-  if ((await saisieMasquee("Confirmez : ")) !== motDePasse) {
-    console.error("Les deux saisies ne correspondent pas.");
-    process.exit(1);
-  }
+  const motDePasse = await demanderMotDePasse(LONGUEUR_MIN_MOT_DE_PASSE);
 
   await db
     .update(users)

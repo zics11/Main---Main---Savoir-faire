@@ -1,0 +1,1 @@
+ALTER TABLE `transmetteurs` ADD `invitation_envoyee_le` integer;

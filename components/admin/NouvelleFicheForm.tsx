@@ -11,7 +11,8 @@ import { DOMAINES } from "@/lib/db/schema";
 // espace (présentation, photos, lieu, stages…).
 export function NouvelleFicheForm() {
   const [etat, creer, enCours] = useActionState(createFiche, null);
-  const v = etat?.valeurs;
+  const erreur = etat && "erreur" in etat ? etat : null;
+  const v = erreur?.valeurs;
 
   return (
     <form action={creer} className="max-w-lg">
@@ -49,9 +50,9 @@ export function NouvelleFicheForm() {
           </select>
         </label>
 
-        {etat?.erreur && (
+        {erreur && (
           <p role="alert" className="text-sm text-destructive">
-            {etat.erreur}
+            {erreur.erreur}
           </p>
         )}
 

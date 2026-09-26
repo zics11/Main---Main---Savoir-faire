@@ -10,6 +10,7 @@ import { stageDates, stages, temoignages, transmetteurs, users } from "@/lib/db/
 import {
   applyPhotos,
   champsManquants,
+  prevenirMiseEnLigne,
   champsSaisis,
   ErreurFiche,
   applyPortrait,
@@ -20,12 +21,14 @@ import {
   str,
   uniqueSlug,
 } from "@/lib/fiche";
+import { changementEmailHtml, changementEmailText } from "@/lib/email";
 import {
-  motDePasseEmailHtml,
-  motDePasseEmailText,
-} from "@/lib/email";
+  annulerChangementEmail,
+  demanderChangementEmail,
+  lienConfirmationEmail,
+} from "@/lib/activation";
 import { sendMail } from "@/lib/mailer";
-import { genererMotDePasse, hacherMotDePasse } from "@/lib/password";
+import { envoyerLienReinitialisation } from "@/lib/reinitialisation";
 import { deleteUploadedPhoto, saveUploadedPhoto } from "@/lib/upload";
 
 /**
@@ -35,6 +38,7 @@ import { deleteUploadedPhoto, saveUploadedPhoto } from "@/lib/upload";
  */
 export type FicheFormState =
   | { erreur: string; valeurs: ReturnType<typeof champsSaisis> }
+  | { info: string }
   | null;
 
 export async function createFiche(
@@ -90,6 +94,7 @@ export async function updateFiche(
   }
 
   let slug = existing.slug;
+  let miseEnLigne = false;
   try {
     const fields = parseFicheFields(formData);
     // Une fiche bloquée ne se publie pas, et rien d'incomplet ne part en
@@ -106,10 +111,6 @@ export async function updateFiche(
     }
     // L'email de la fiche est aussi l'identifiant de connexion du
     // transmetteur : le changer déplace aussi le compte rattaché.
-    const email = parseEmail(formData);
-    if (email !== existing.email && existing.userId) {
-      await deplacerCompte(existing.userId, email);
-    }
     slug =
       fields.nom === existing.nom
         ? existing.slug
@@ -129,7 +130,6 @@ export async function updateFiche(
         // Une demande en cours n'est soldée que si la fiche part en ligne :
         // éditer une fiche en attente ne doit pas effacer sa demande.
         publicationDemandeeLe: publiee ? null : existing.publicationDemandeeLe,
-        email,
         slug,
         updatedAt: new Date(),
       })
@@ -137,12 +137,16 @@ export async function updateFiche(
 
     await applyPhotos(transmetteurId, existing.photos, formData);
     await applyPortrait(transmetteurId, existing.photoPortrait, formData);
+    miseEnLigne = publiee && !existing.publiee;
   } catch (e) {
     if (e instanceof ErreurFiche) {
       return { erreur: e.message, valeurs: champsSaisis(formData) };
     }
     throw e;
   }
+
+  // Mise en ligne : le transmetteur l'apprend par email.
+  if (miseEnLigne) await prevenirMiseEnLigne({ ...existing, slug });
 
   revalidatePath("/admin");
   revalidatePath(`/admin/fiches/${transmetteurId}`);
@@ -153,10 +157,15 @@ export async function updateFiche(
 }
 
 /**
- * Fait suivre au compte rattaché la nouvelle adresse de la fiche : c'est son
- * identifiant de connexion. Le mot de passe, lui, ne change pas.
+ * Changer l'adresse d'un compte ne prend effet qu'après confirmation : le
+ * lien part à la NOUVELLE adresse, et l'ancienne continue de fonctionner
+ * jusque-là. Sans ça, une faute de frappe enfermerait le transmetteur dehors.
  */
-async function deplacerCompte(userId: string, email: string) {
+async function demanderNouvelEmail(
+  userId: string,
+  email: string,
+  ficheNom: string
+) {
   const occupant = await db.query.users.findFirst({
     where: eq(users.email, email),
   });
@@ -165,13 +174,94 @@ async function deplacerCompte(userId: string, email: string) {
       `L'adresse ${email} est déjà celle d'un autre compte. Déliez d'abord la fiche, ou utilisez une autre adresse.`
     );
   }
-  await db
-    .update(users)
-    .set({ email })
-    .where(eq(users.id, userId));
+
+  const url = lienConfirmationEmail(await demanderChangementEmail(userId, email));
+  try {
+    await sendMail({
+      to: email,
+      subject: "Confirmez votre nouvelle adresse — Main à Main",
+      html: changementEmailHtml(ficheNom, url),
+      text: changementEmailText(ficheNom, url),
+    });
+  } catch (err) {
+    console.error(`Email change confirmation to ${email} failed to send:`, err);
+    await annulerChangementEmail(userId);
+    throw new ErreurFiche(
+      `L'email de confirmation n'a pas pu partir à ${email} : l'adresse n'a pas été changée.`
+    );
+  }
 }
 
 export type InvitationState = { ok: boolean; message: string } | null;
+
+/**
+ * Change l'adresse d'une fiche. Avec un compte rattaché, elle ne bascule
+ * qu'une fois le lien de confirmation cliqué (voir demanderNouvelEmail) ;
+ * sans compte, il n'y a rien à confirmer.
+ */
+export async function changerEmailFiche(
+  transmetteurId: string,
+  _prev: InvitationState,
+  formData: FormData
+): Promise<InvitationState> {
+  await requireAdmin();
+  const fiche = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
+  });
+  if (!fiche) return { ok: false, message: "Fiche introuvable." };
+
+  let email: string;
+  try {
+    email = parseEmail(formData);
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof ErreurFiche ? e.message : "Adresse invalide.",
+    };
+  }
+  if (email === fiche.email) {
+    return { ok: false, message: "C'est déjà l'adresse de cette fiche." };
+  }
+
+  if (!fiche.userId) {
+    await db
+      .update(transmetteurs)
+      .set({ email, updatedAt: new Date() })
+      .where(eq(transmetteurs.id, transmetteurId));
+    revalidatePath(`/admin/fiches/${transmetteurId}`);
+    return { ok: true, message: `Adresse remplacée par ${email}.` };
+  }
+
+  try {
+    await demanderNouvelEmail(fiche.userId, email, fiche.nom);
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof ErreurFiche ? e.message : "Changement impossible.",
+    };
+  }
+
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return {
+    ok: true,
+    message: `Un email de confirmation est parti à ${email}. L'adresse ne changera qu'une fois le lien cliqué ; d'ici là, l'ancienne reste valable.`,
+  };
+}
+
+/** Abandonne un changement d'adresse que le transmetteur n'a pas confirmé. */
+export async function annulerNouvelEmail(
+  transmetteurId: string
+): Promise<InvitationState> {
+  await requireAdmin();
+  const fiche = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
+  });
+  if (!fiche?.userId) return { ok: false, message: "Fiche sans compte." };
+
+  await annulerChangementEmail(fiche.userId);
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return { ok: true, message: "Changement d'adresse annulé." };
+}
 
 /**
  * Suspend une fiche, ou lève la suspension. Une fiche bloquée quitte le site
@@ -202,29 +292,11 @@ export async function basculerBlocage(transmetteurId: string) {
   revalidatePath(`/fiche/${existing.slug}`);
 }
 
-// Détache le compte de la fiche sans supprimer ni l'un ni l'autre : le
-// transmetteur perd l'accès à cette fiche, et l'email redevient librement
-// modifiable. Sert notamment à corriger une invitation envoyée par erreur.
-export async function delierCompte(
-  transmetteurId: string
-): Promise<InvitationState> {
-  await requireAdmin();
-  await db
-    .update(transmetteurs)
-    .set({ userId: null })
-    .where(eq(transmetteurs.id, transmetteurId));
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
-  return { ok: true, message: "Compte délié de cette fiche." };
-}
-
 /**
- * Tire un nouveau mot de passe et l'envoie directement au transmetteur.
- *
- * L'email part AVANT l'enregistrement : si l'envoi échoue, l'ancien mot de
- * passe continue de fonctionner, plutôt que de laisser le transmetteur avec
- * un mot de passe que personne ne connaît.
+ * Envoie au transmetteur le lien « nouveau mot de passe » : il en choisit un
+ * lui-même, et l'actuel reste valable tant qu'il ne l'a pas utilisé.
  */
-export async function envoyerMotDePasseTransmetteur(
+export async function envoyerRecuperation(
   transmetteurId: string
 ): Promise<InvitationState> {
   await requireAdmin();
@@ -232,47 +304,19 @@ export async function envoyerMotDePasseTransmetteur(
     where: eq(transmetteurs.id, transmetteurId),
   });
   if (!fiche?.userId) {
-    return {
-      ok: false,
-      message: "Cette fiche n'a pas encore de compte : envoyez d'abord l'invitation.",
-    };
+    return { ok: false, message: "Cette fiche n'a pas de compte rattaché." };
   }
 
-  const motDePasse = genererMotDePasse();
-  const url = new URL(
-    "/connexion",
-    process.env.AUTH_URL ?? "http://localhost:3000"
-  ).toString();
-
-  try {
-    await sendMail({
-      to: fiche.email,
-      subject: "Votre mot de passe Main à Main",
-      html: motDePasseEmailHtml(motDePasse, url),
-      text: motDePasseEmailText(motDePasse, url),
-    });
-  } catch (err) {
-    console.error(`Password email to ${fiche.email} failed to send:`, err);
-    return {
-      ok: false,
-      message: `L'email n'a pas pu partir : le mot de passe n'a pas été changé. Vérifiez l'adresse ${fiche.email}.`,
-    };
-  }
-
-  await db
-    .update(users)
-    .set({ passwordHash: await hacherMotDePasse(motDePasse) })
-    .where(eq(users.id, fiche.userId));
-
+  const envoye = await envoyerLienReinitialisation(fiche.email);
   revalidatePath(`/admin/fiches/${transmetteurId}`);
-  return {
-    ok: true,
-    message: `Nouveau mot de passe envoyé à ${fiche.email}.`,
-  };
+  return envoye
+    ? {
+        ok: true,
+        message: `Mail de récupération envoyé à ${fiche.email}. Le lien est valable 2 heures.`,
+      }
+    : { ok: false, message: `L'email n'a pas pu partir à ${fiche.email}.` };
 }
 
-// Crée le compte du transmetteur (s'il n'existe pas) et (r)envoie
-// l'invitation — indispensable pour les fiches créées sans invitation.
 export async function inviterTransmetteur(
   transmetteurId: string
 ): Promise<InvitationState> {
@@ -336,6 +380,10 @@ export async function togglePubliee(transmetteurId: string) {
           : existing.premiereValidationLe,
     })
     .where(eq(transmetteurs.id, transmetteurId));
+
+  // Mise en ligne : le transmetteur l'apprend par email, sans avoir à guetter.
+  if (!existing.publiee) await prevenirMiseEnLigne(existing);
+
   revalidatePath("/admin");
   revalidatePath("/mes-stages");
 }
