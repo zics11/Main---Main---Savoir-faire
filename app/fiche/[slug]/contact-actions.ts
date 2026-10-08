@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { stageDates, stages, transmetteurs } from "@/lib/db/schema";
 import { contactRequestEmailHtml, contactRequestEmailText } from "@/lib/email";
-import { formatDateRange } from "@/lib/format";
+import { formatDebutEtDuree } from "@/lib/format";
 import { sendMail } from "@/lib/mailer";
 
 export type ContactState = { ok?: true; error?: string };
@@ -59,7 +59,9 @@ export async function sendContactRequest(
     personnes,
     hebergement: formData.get("hebergement") === "on",
     offreLabel: stage?.titre ?? null,
-    dateLabel: date ? formatDateRange(date.dateDebut, date.dateFin) : null,
+    dateLabel: date
+      ? formatDebutEtDuree(date.dateDebut, date.dateFin, stage?.duree ?? null)
+      : null,
     message,
   };
 

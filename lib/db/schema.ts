@@ -109,6 +109,11 @@ export const transmetteurs = sqliteTable(
     email: text("email").notNull(),
     lat: real("lat"),
     lng: real("lng"),
+    // Localisation : la commune et son code postal situent la fiche (ils sont
+    // exigés pour la mise en ligne) ; le complément, lui, reste libre et
+    // facultatif — « à 10 min de Lézignan », « sur le plateau ».
+    ville: text("ville"),
+    codePostal: text("code_postal"),
     lieuApproximatif: text("lieu_approximatif"),
     modalitesAccueil: text("modalites_accueil"),
     hebergement: integer("hebergement", { mode: "boolean" })

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { definirMotDePasse } from "@/app/mon-compte/actions";
 import { ModaleConfirmation } from "@/components/ui/ModaleConfirmation";
 import { LONGUEUR_MIN_MOT_DE_PASSE } from "@/lib/constants";
+import { bouton } from "@/lib/style";
 
 /**
  * Changer son mot de passe est un geste à part : bouton dédié, fenêtre de
@@ -26,7 +27,7 @@ export function MotDePasseForm({ aUnMotDePasse }: { aUnMotDePasse: boolean }) {
       <button
         type="button"
         onClick={() => setOuverte(true)}
-        className="rounded-sm border border-primary px-4 py-2.5 text-sm font-medium text-primary hover:bg-accent"
+        className={bouton.contour}
       >
         {aUnMotDePasse ? "Changer mon mot de passe" : "Définir un mot de passe"}
       </button>
@@ -34,7 +35,7 @@ export function MotDePasseForm({ aUnMotDePasse }: { aUnMotDePasse: boolean }) {
       {message && !ouverte && (
         <p
           role="status"
-          className={`mt-3 text-sm ${message.ok ? "text-[#4f6b3a]" : "text-destructive"}`}
+          className={`mt-3 text-sm ${message.ok ? "text-success-foreground" : "text-destructive"}`}
         >
           {message.message}
         </p>
@@ -90,14 +91,14 @@ export function MotDePasseForm({ aUnMotDePasse }: { aUnMotDePasse: boolean }) {
               <button
                 type="submit"
                 disabled={enCours}
-                className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+                className={bouton.primaire}
               >
                 {enCours ? "Enregistrement…" : "Enregistrer"}
               </button>
               <button
                 type="button"
                 onClick={() => setOuverte(false)}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={bouton.discret}
               >
                 Annuler
               </button>

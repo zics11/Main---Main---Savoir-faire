@@ -3,7 +3,10 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { transmetteurs } from "@/lib/db/schema";
 import { DOMAINE_LABELS } from "@/lib/constants";
+import { libelleLieu } from "@/lib/lieu";
 import { togglePubliee } from "./actions";
+import { bouton } from "@/lib/style";
+import { PlusIcon } from "lucide-react";
 
 type Fiche = typeof transmetteurs.$inferSelect;
 
@@ -131,7 +134,7 @@ function EnTeteTri({
     <Link
       href={`/admin?${params}`}
       className={`flex items-center gap-1 hover:text-foreground ${
-        actif ? "text-foreground" : ""
+        actif ? "text-foreground" : "text-muted-foreground"
       } ${className ?? ""}`}
     >
       {label}
@@ -157,7 +160,9 @@ export default async function AdminPage({
     ? or(
         like(transmetteurs.nom, `%${query}%`),
         like(transmetteurs.savoirFaire, `%${query}%`),
-        like(transmetteurs.lieuApproximatif, `%${query}%`)
+        like(transmetteurs.lieuApproximatif, `%${query}%`),
+        like(transmetteurs.ville, `%${query}%`),
+        like(transmetteurs.codePostal, `%${query}%`)
       )
     : undefined;
   const toutes = await db.query.transmetteurs.findMany({ where: recherche });
@@ -190,16 +195,17 @@ export default async function AdminPage({
         </div>
         <Link
           href="/admin/fiches/nouvelle"
-          className="rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+          className={bouton.primaire}
         >
-          + Créer une fiche
+          <PlusIcon aria-hidden className="h-4 w-4" />
+          Créer une fiche
         </Link>
       </div>
 
       {aValider.length > 0 && (
         <section className="mb-8 overflow-hidden rounded-sm border border-primary bg-accent">
           <div className="border-b border-primary/30 px-4 py-3">
-            <h2 className="font-serif text-lg font-semibold">
+            <h2 className="font-serif text-xl font-semibold">
               Demandes de publication ({aValider.length})
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -230,7 +236,7 @@ export default async function AdminPage({
                   <form action={togglePubliee.bind(null, f.id)}>
                     <button
                       type="submit"
-                      className="rounded-sm bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-[#8a4222]"
+                      className={bouton.primaire}
                     >
                       Publier
                     </button>
@@ -293,7 +299,7 @@ export default async function AdminPage({
       </form>
 
       <div className="overflow-hidden rounded-sm border border-border bg-card">
-        <div className="grid grid-cols-[1.4fr_1fr_100px_110px_110px_90px] gap-3 border-b border-border bg-secondary px-4 py-3 text-xs tracking-wide text-muted-foreground uppercase">
+        <div className="grid grid-cols-[1.4fr_1fr_100px_110px_110px_130px] gap-3 border-b border-border bg-secondary px-4 py-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
           {(
             [
               ["nom", "Fiche"],
@@ -316,16 +322,16 @@ export default async function AdminPage({
           <span />
         </div>
         {listees.map((f) => (
+          // Toutes les lignes ont la même apparence : seule la pastille de la
+          // colonne Statut distingue les états.
           <div
             key={f.id}
-            className={`grid grid-cols-[1.4fr_1fr_100px_110px_110px_90px] items-center gap-3 border-b border-border border-l-3 px-4 py-3 text-sm last:border-b-0 ${
-              f.publiee ? "border-l-transparent" : "border-l-primary bg-secondary/40"
-            }`}
+            className="grid grid-cols-[1.4fr_1fr_100px_110px_110px_130px] items-center gap-3 border-b border-border px-4 py-3 text-sm last:border-b-0"
           >
             <div>
               <div className="font-medium">{f.nom}</div>
               <div className="text-xs text-muted-foreground">
-                {f.lieuApproximatif ?? "Lieu à renseigner"}
+                {libelleLieu(f) || "Lieu à renseigner"}
               </div>
             </div>
             <div className="text-sm">
@@ -347,6 +353,15 @@ export default async function AdminPage({
               >
                 Éditer
               </Link>
+              {/* Rendu public, même avant la mise en ligne. */}
+              <a
+                href={`/fiche/${f.slug}`}
+                target="_blank"
+                rel="noopener"
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                {f.publiee ? "Voir" : "Aperçu"}
+              </a>
               {/* Publier, masquer et bloquer se décident depuis la fiche
                   elle-même, où l'on voit ce qu'on met en ligne. */}
             </div>

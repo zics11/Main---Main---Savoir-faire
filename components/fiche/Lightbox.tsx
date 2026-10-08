@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Image from "next/image";
 
 // Visionneuse plein écran réutilisée par PhotoGallery (photos de la fiche)
-// et StagePhotos (photos d'un stage précis).
+// et StageCouverture (photos d'un stage précis).
 export function Lightbox({
   photos,
   alt,
@@ -37,7 +37,7 @@ export function Lightbox({
         type="button"
         onClick={onClose}
         aria-label="Fermer"
-        className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-card text-lg"
+        className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-sm bg-card text-lg"
       >
         ×
       </button>
@@ -50,7 +50,7 @@ export function Lightbox({
             onIndexChange((index - 1 + photos.length) % photos.length);
           }}
           aria-label="Photo précédente"
-          className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-card text-lg sm:left-6"
+          className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-sm bg-card text-lg sm:left-6"
         >
           ‹
         </button>
@@ -71,14 +71,14 @@ export function Lightbox({
             onIndexChange((index + 1) % photos.length);
           }}
           aria-label="Photo suivante"
-          className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-card text-lg sm:right-6"
+          className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-sm bg-card text-lg sm:right-6"
         >
           ›
         </button>
       )}
 
       {photos.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-card px-3 py-1 text-xs font-medium">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-sm bg-card px-3 py-1 text-xs font-medium">
           {index + 1} / {photos.length}
         </div>
       )}

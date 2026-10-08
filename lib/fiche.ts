@@ -11,6 +11,8 @@ import {
 import { sendMail } from "@/lib/mailer";
 import { creerJetonActivation, lienActivation } from "@/lib/activation";
 import { PHOTOS_MINIMUM } from "@/lib/fiche-constantes";
+import { codePostalValide } from "@/lib/lieu";
+import { ordonnerPhotos } from "@/lib/ordre-photos";
 import { slugify } from "@/lib/slug";
 import { deleteUploadedPhoto, saveUploadedPhoto } from "@/lib/upload";
 
@@ -79,6 +81,8 @@ export function parseFicheFields(formData: FormData) {
     reseauxSociaux: optionalStr(formData, "reseauxSociaux"),
     lat: coordonnee(formData, "lat"),
     lng: coordonnee(formData, "lng"),
+    ville: optionalStr(formData, "ville"),
+    codePostal: codePostal(formData),
     lieuApproximatif: optionalStr(formData, "lieuApproximatif"),
     modalitesAccueil: optionalStr(formData, "modalitesAccueil"),
     hebergement: formData.get("hebergement") === "on",
@@ -111,6 +115,8 @@ export function champsSaisis(formData: FormData) {
     email: str(formData, "email"),
     lat: nombre("lat"),
     lng: nombre("lng"),
+    ville: optionalStr(formData, "ville"),
+    codePostal: optionalStr(formData, "codePostal"),
     lieuApproximatif: str(formData, "lieuApproximatif"),
     modalitesAccueil: optionalStr(formData, "modalitesAccueil"),
     hebergement: formData.get("hebergement") === "on",
@@ -126,6 +132,15 @@ export function champsSaisis(formData: FormData) {
  * passerait pour une coordonnée valide et placerait la fiche au large de
  * l'Afrique.
  */
+function codePostal(formData: FormData) {
+  const brut = str(formData, "codePostal");
+  if (brut === "") return null;
+  if (!codePostalValide(brut)) {
+    throw new ErreurFiche("Le code postal doit avoir cinq chiffres.");
+  }
+  return brut;
+}
+
 function coordonnee(formData: FormData, cle: string) {
   const brut = str(formData, cle);
   if (brut === "") return null;
@@ -142,13 +157,15 @@ function coordonnee(formData: FormData, cle: string) {
  */
 export function champsManquants(fiche: {
   savoirFaire: string | null;
-  lieuApproximatif: string | null;
+  ville: string | null;
+  codePostal: string | null;
   lat: number | null;
   lng: number | null;
 }) {
   const manquants: string[] = [];
   if (!fiche.savoirFaire) manquants.push("le savoir-faire transmis");
-  if (!fiche.lieuApproximatif) manquants.push("le lieu approximatif");
+  if (!fiche.ville) manquants.push("la ville");
+  if (!fiche.codePostal) manquants.push("le code postal");
   if (fiche.lat === null || fiche.lng === null) {
     manquants.push("le point sur la carte");
   }
@@ -166,7 +183,8 @@ export function champsManquants(fiche: {
  */
 export function champsManquantsDemande(fiche: {
   savoirFaire: string | null;
-  lieuApproximatif: string | null;
+  ville: string | null;
+  codePostal: string | null;
   lat: number | null;
   lng: number | null;
   histoire: string;
@@ -215,7 +233,8 @@ export async function applyPhotos(
 
   await db
     .update(transmetteurs)
-    .set({ photos: [...kept, ...added] })
+    // Dans l'ordre choisi : la première est la photo d'accueil de la fiche.
+    .set({ photos: ordonnerPhotos(formData, kept, added) })
     .where(eq(transmetteurs.id, transmetteurId));
 }
 

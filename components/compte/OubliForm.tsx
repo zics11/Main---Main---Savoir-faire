@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { demanderReinitialisation } from "@/app/mot-de-passe-oublie/actions";
+import { bouton } from "@/lib/style";
 
 export function OubliForm() {
   const [etat, demander, enCours] = useActionState(demanderReinitialisation, null);
@@ -24,7 +25,7 @@ export function OubliForm() {
       {etat && (
         <p
           role="status"
-          className={`text-sm ${etat.ok ? "text-[#4f6b3a]" : "text-destructive"}`}
+          className={`text-sm ${etat.ok ? "text-success-foreground" : "text-destructive"}`}
         >
           {etat.message}
         </p>
@@ -33,7 +34,7 @@ export function OubliForm() {
       <button
         type="submit"
         disabled={enCours}
-        className="mt-2 rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+        className={`${bouton.primaire} mt-2`}
       >
         {enCours ? "Envoi…" : "Envoyer le lien"}
       </button>

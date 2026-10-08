@@ -1,46 +1,47 @@
+import { eq } from "drizzle-orm";
 import Link from "next/link";
+import { NavigationAdmin } from "@/components/admin/NavigationAdmin";
+import { auth, signOut } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { transmetteurs } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/dal";
-import { signOut } from "@/lib/auth";
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   await requireAdmin();
+  const session = await auth();
+
+  // Comme sur le site public, la fiche rattachée au compte donne le visage du
+  // menu ; un compte de l'association n'en a pas et montre ses initiales.
+  const fiche = session?.user?.id
+    ? await db.query.transmetteurs.findFirst({
+        where: eq(transmetteurs.userId, session.user.id),
+        columns: { nom: true, photoPortrait: true },
+      })
+    : null;
+
+  async function deconnexion() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between bg-[#2b2620] px-8 py-4 text-[#faf8f4]">
-        <div className="flex items-baseline gap-3">
-          <Link href="/admin" className="font-serif text-xl font-bold">
+      <header className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 bg-[#2b2620] px-8 py-4 text-[#faf8f4]">
+        <Link href="/admin" className="flex items-baseline gap-3">
+          <span className="font-serif text-2xl font-bold whitespace-nowrap xl:text-3xl">
             Main à Main
-          </Link>
+          </span>
           <span className="text-xs tracking-wider text-[#d9925f] uppercase">
             administration
           </span>
-        </div>
-        <div className="flex items-center gap-6 text-sm">
-          {/* Retour à la liste : utile surtout depuis l'intérieur d'une fiche. */}
-          <Link href="/admin" className="text-[#cfc8bb] hover:text-[#faf8f4]">
-            Toutes les fiches
-          </Link>
-          <Link href="/admin/fiches/nouvelle" className="text-[#cfc8bb] hover:text-[#faf8f4]">
-            Créer une fiche
-          </Link>
-          <Link href="/" className="text-[#cfc8bb] hover:text-[#faf8f4]">
-            Voir le site public
-          </Link>
-          <Link href="/mon-compte" className="text-[#cfc8bb] hover:text-[#faf8f4]">
-            Mon compte
-          </Link>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button type="submit" className="text-[#cfc8bb] hover:text-[#faf8f4]">
-              Se déconnecter
-            </button>
-          </form>
-        </div>
+        </Link>
+
+        <NavigationAdmin
+          email={session?.user?.email ?? ""}
+          nom={fiche?.nom ?? null}
+          portrait={fiche?.photoPortrait ?? null}
+          deconnexion={deconnexion}
+        />
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-8 py-9">
         {children}

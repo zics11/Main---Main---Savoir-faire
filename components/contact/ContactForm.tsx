@@ -3,7 +3,9 @@
 import { useActionState, useState } from "react";
 import type { Stage, StageDate } from "@/lib/db/schema";
 import type { ContactState } from "@/app/fiche/[slug]/contact-actions";
-import { formatDateRange } from "@/lib/format";
+import { formatDebutEtDuree } from "@/lib/format";
+import { bouton, champ, intitule, surtitre } from "@/lib/style";
+import { EtiquetteForme } from "@/components/shared/Etiquettes";
 
 // Le niveau de l'apprenant (qui écrit) — distinct du niveau du stage choisi.
 const NIVEAUX_APPRENANT = [
@@ -15,8 +17,7 @@ const NIVEAUX_APPRENANT = [
 
 type Offre = Stage & { dates: StageDate[] };
 
-const inputClass =
-  "w-full rounded-sm border border-input bg-card px-3 py-2.5 text-sm";
+const inputClass = champ;
 const labelClass = "flex flex-col gap-1.5 text-sm";
 
 export function ContactForm({
@@ -65,7 +66,9 @@ export function ContactForm({
 
   const resumeOffre = stage?.titre ?? "Question, à discuter";
   const resumeDate =
-    souple || !date ? "Souple, à convenir" : formatDateRange(date.dateDebut, date.dateFin);
+    souple || !date
+      ? "Souple, à convenir"
+      : formatDebutEtDuree(date.dateDebut, date.dateFin, stage?.duree ?? null);
 
   function choisirStage(o: Offre) {
     setStageId(o.id);
@@ -85,7 +88,7 @@ export function ContactForm({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+          className={bouton.primaire}
         >
           Fermer
         </button>
@@ -95,10 +98,10 @@ export function ContactForm({
 
   return (
     <div className="p-6 sm:p-8">
-      <div className="mb-2 text-xs tracking-wide text-primary uppercase">
+      <div className={`mb-2 ${surtitre}`}>
         Prendre contact
       </div>
-      <h2 className="mb-2.5 font-serif text-3xl font-semibold">
+      <h2 className="mb-2.5 font-serif text-2xl font-semibold">
         Écrire à {fiche.prenom}
       </h2>
       <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
@@ -107,7 +110,7 @@ export function ContactForm({
         dates et les conditions.
       </p>
 
-      <div className="mb-7 rounded-sm border border-border bg-accent px-4 py-3 text-[13px] text-primary">
+      <div className="mb-7 rounded-sm border border-border bg-accent px-4 py-3 text-sm text-primary">
         Aucun paiement sur la plateforme. Si un stage est payant, le règlement
         se fait entre vous, sur place ou comme {fiche.prenom} le propose.
       </div>
@@ -145,13 +148,9 @@ export function ContactForm({
                     <span className="flex-1">
                       <span className="mb-1 flex flex-wrap items-center gap-2">
                         <span className="text-sm font-semibold">{o.titre}</span>
-                        {o.type && (
-                          <span className="rounded-sm bg-accent px-2 py-0.5 text-[11px] tracking-wide text-primary uppercase">
-                            {o.type}
-                          </span>
-                        )}
+                        {o.type && <EtiquetteForme forme={o.type} />}
                       </span>
-                      <span className="block text-[13px] leading-relaxed text-muted-foreground">
+                      <span className="block text-sm leading-relaxed text-muted-foreground">
                         {o.description}
                       </span>
                     </span>
@@ -184,7 +183,7 @@ export function ContactForm({
                   <span className="mb-1 block text-sm font-semibold">
                     Une question, ou autre chose
                   </span>
-                  <span className="block text-[13px] leading-relaxed text-muted-foreground">
+                  <span className="block text-sm leading-relaxed text-muted-foreground">
                     Vous n&apos;êtes pas encore fixé·e, ou votre message ne
                     concerne pas un stage précis.
                   </span>
@@ -225,10 +224,10 @@ export function ContactForm({
                     }`}
                   >
                     <span className="text-sm font-semibold">
-                      {formatDateRange(d.dateDebut, d.dateFin)}
+                      {formatDebutEtDuree(d.dateDebut, d.dateFin, stage?.duree ?? null)}
                     </span>
                     <span
-                      className={`text-xs whitespace-nowrap ${dComplet ? "text-muted-foreground" : "text-[#4a6741]"}`}
+                      className={`text-xs whitespace-nowrap ${dComplet ? "text-muted-foreground" : "text-success-foreground"}`}
                     >
                       {dComplet
                         ? "Complet"
@@ -355,7 +354,7 @@ export function ContactForm({
         </section>
 
         <div className="rounded-sm border border-border bg-secondary p-4">
-          <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
+          <div className={`mb-2.5 ${intitule}`}>
             Votre demande
           </div>
           <div className="flex flex-col gap-1.5 text-sm">
@@ -384,7 +383,7 @@ export function ContactForm({
           <button
             type="submit"
             disabled={pending}
-            className="rounded-sm bg-primary px-7 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+            className={bouton.primaire}
           >
             {pending ? "Envoi…" : `Envoyer à ${fiche.prenom}`}
           </button>

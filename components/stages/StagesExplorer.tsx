@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ClockIcon, FunnelIcon, TagIcon, XIcon } from "lucide-react";
 import { FranceMap } from "@/components/map/FranceMap";
 import {
   dansLeCadrage,
@@ -11,8 +12,12 @@ import {
 } from "@/components/map/types";
 import { DOMAINE_LABELS, TYPES_TRANSMISSION } from "@/lib/constants";
 import type { Domaine } from "@/lib/db/schema";
-import { formatDateRange } from "@/lib/format";
+import { dureeDuStage } from "@/lib/format";
+import { BandeDate, Places, Repere } from "@/components/fiche/ReperesStage";
+import { EtiquetteForme } from "@/components/shared/Etiquettes";
+import { construireVignetteStages } from "./vignette-stages";
 import type { UpcomingStage } from "@/lib/queries";
+import { bouton, boutonFermer, champ, intitule, titre } from "@/lib/style";
 
 const DOMAINE_OPTIONS: (Domaine | "toutes")[] = [
   "toutes",
@@ -35,13 +40,21 @@ const HORIZONS: { jours: number; label: string }[] = [
   { jours: 90, label: "3 mois" },
 ];
 
-export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
+export function StagesExplorer({
+  stages,
+  rechercheInitiale = "",
+}: {
+  stages: UpcomingStage[];
+  /** Ce qui a été tapé dans la recherche de l'en-tête (/stages?q=…). */
+  rechercheInitiale?: string;
+}) {
   const [domaine, setDomaine] = useState<Domaine | "toutes">("toutes");
-  const [recherche, setRecherche] = useState("");
+  const [recherche, setRecherche] = useState(rechercheInitiale);
   const [types, setTypes] = useState<string[]>([]);
   const [hebergement, setHebergement] = useState(false);
   const [horizon, setHorizon] = useState<number | null>(null);
   const [actif, setActif] = useState<string | null>(null);
+  const [lieuSurvole, setLieuSurvole] = useState<string | null>(null);
   // frozen at mount — precise-to-the-second freshness isn't needed for a
   // "within 30 days" filter, and reading Date.now() during render is impure
   const [now] = useState(() => Date.now());
@@ -50,7 +63,9 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
   const [cadrage, setCadrage] = useState<MapBounds | null>(null);
   // « Autour de moi » ne filtre pas non plus : il recadre la carte, et c'est
   // le cadrage qui décide de la liste.
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
+    null,
+  );
   const [rayonKm, setRayonKm] = useState(100);
   const [geoErreur, setGeoErreur] = useState<string | null>(null);
   const [panneau, setPanneau] = useState(false);
@@ -71,7 +86,9 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
 
   const onUseLocation = () => {
     if (!navigator.geolocation) {
-      setGeoErreur("La géolocalisation n'est pas disponible sur ce navigateur.");
+      setGeoErreur(
+        "La géolocalisation n'est pas disponible sur ce navigateur.",
+      );
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -79,7 +96,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
         setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGeoErreur(null);
       },
-      () => setGeoErreur("Localisation refusée ou indisponible.")
+      () => setGeoErreur("Localisation refusée ou indisponible."),
     );
   };
 
@@ -104,12 +121,16 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
           q === "" ||
           s.titre.toLowerCase().includes(q) ||
           s.transmetteur.nom.toLowerCase().includes(q) ||
-          s.transmetteur.savoirFaire.toLowerCase().includes(q)
+          s.transmetteur.savoirFaire.toLowerCase().includes(q),
       )
-      .filter((s) => types.length === 0 || (s.type !== null && types.includes(s.type)))
+      .filter(
+        (s) =>
+          types.length === 0 || (s.type !== null && types.includes(s.type)),
+      )
       .filter((s) => !hebergement || s.transmetteur.hebergement)
       .filter(
-        (s) => horizon === null || s.dateDebut.getTime() - now <= horizon * JOUR_MS
+        (s) =>
+          horizon === null || s.dateDebut.getTime() - now <= horizon * JOUR_MS,
       );
   }, [stages, domaine, q, types, hebergement, horizon, now]);
 
@@ -118,18 +139,60 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
       cadrage
         ? filtres.filter((s) => dansLeCadrage(s.transmetteur, cadrage))
         : filtres,
-    [filtres, cadrage]
+    [filtres, cadrage],
   );
   const horsCadre = filtres.length - visibles.length;
 
-  const points: TransmetteurPoint[] = filtres.map((s) => ({
-    ...s.transmetteur,
-    id: s.id,
-  }));
+  // Un point par lieu, qui présente les stages du lieu (vignette-stages) :
+  // les dates d'un même endroit se superposeraient, une seule resterait
+  // cliquable. Son identifiant change avec les dates présentes, pour que la
+  // bulle soit refaite quand les filtres changent.
+  const lieux = useMemo(() => {
+    const parLieu = new Map<string, UpcomingStage[]>();
+    for (const s of filtres) {
+      const cle = `${s.transmetteur.lat},${s.transmetteur.lng}`;
+      parLieu.set(cle, [...(parLieu.get(cle) ?? []), s]);
+    }
+    return [...parLieu.entries()].map(([cle, dates]) => ({
+      id: `${cle}|${dates.map((d) => d.id).join(",")}`,
+      dates,
+    }));
+  }, [filtres]);
+  const datesDuPoint = useMemo(
+    () => new Map(lieux.map((l) => [l.id, l.dates])),
+    [lieux],
+  );
+  const pointDeLaDate = useMemo(
+    () =>
+      new Map(lieux.flatMap((l) => l.dates.map((d) => [d.id, l.id] as const))),
+    [lieux],
+  );
+  const points: TransmetteurPoint[] = useMemo(
+    () => lieux.map((l) => ({ ...l.dates[0].transmetteur, id: l.id })),
+    [lieux],
+  );
+  const vignette = useCallback(
+    (p: TransmetteurPoint) =>
+      construireVignetteStages(datesDuPoint.get(p.id) ?? []),
+    [datesDuPoint],
+  );
+  const infobulle = useCallback(
+    (p: TransmetteurPoint) => {
+      const titres = [
+        ...new Set((datesDuPoint.get(p.id) ?? []).map((d) => d.titre)),
+      ];
+      return `${titres.join(" · ")} — ${p.titre}`;
+    },
+    [datesDuPoint],
+  );
+  // Le point survolé sur la carte éclaire ses dates dans la liste, et la date
+  // survolée dans la liste éclaire son point.
+  const pointActif =
+    lieuSurvole ?? (actif ? (pointDeLaDate.get(actif) ?? null) : null);
 
   const focus = useMemo(
     () => (position ? { ...position, rayonKm } : null),
-    [position, rayonKm]
+    [position, rayonKm],
   );
 
   const resetFiltres = () => {
@@ -146,9 +209,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
     // contenu au lieu de se limiter à l'écran, et la liste ne défile jamais.
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="bg-background px-6 pt-5 pb-3 sm:px-12">
-        <h1 className="font-serif text-3xl font-semibold leading-tight">
-          Des dates pour apprendre en faisant
-        </h1>
+        <h1 className={titre.outil}>Des dates pour apprendre en faisant</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Cliquez sur un point de la carte pour un aperçu, puis sur
           l&apos;aperçu pour ouvrir la fiche.
@@ -160,22 +221,18 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
           bouton « Filtres », avec un compteur pour ne pas oublier qu'ils
           sont actifs une fois la fenêtre refermée. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-background px-6 py-3 sm:px-12">
-        <span className="text-xs tracking-wide text-muted-foreground uppercase">
-          Rechercher
-        </span>
+        <span className={intitule}>Rechercher</span>
         <input
           type="text"
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Un stage, un nom, un savoir-faire…"
-          className="w-full rounded-sm border border-input bg-card px-3 py-2 text-sm sm:w-72"
+          className={`${champ} sm:w-72`}
         />
 
         <span className="hidden h-6 w-px bg-border sm:block" />
 
-        <span className="text-xs tracking-wide text-muted-foreground uppercase">
-          Quand
-        </span>
+        <span className={intitule}>Quand</span>
         <div className="flex flex-wrap gap-1.5">
           {HORIZONS.map((h) => {
             const on = horizon === h.jours;
@@ -200,9 +257,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
 
         <span className="hidden h-6 w-px bg-border sm:block" />
 
-        <span className="text-xs tracking-wide text-muted-foreground uppercase">
-          Autour de moi
-        </span>
+        <span className={intitule}>Autour de moi</span>
         <div className="flex flex-wrap gap-1.5">
           {RAYONS.map((r) => {
             const on = position !== null && rayonKm === r;
@@ -222,7 +277,9 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
             );
           })}
         </div>
-        {geoErreur && <span className="text-xs text-destructive">{geoErreur}</span>}
+        {geoErreur && (
+          <span className="text-xs text-destructive">{geoErreur}</span>
+        )}
 
         {/* Volontairement plus marqué que les pastilles voisines : c'est le
             seul bouton du bandeau qui ouvre une fenêtre. */}
@@ -235,22 +292,10 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
               : "border-primary bg-card text-primary hover:bg-accent"
           }`}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 5h16l-6.5 7.6V19l-3 1.5v-8.9L4 5z" />
-          </svg>
+          <FunnelIcon aria-hidden className="h-4 w-4" />
           Filtres
           {nbFiltres > 0 && (
-            <span className="rounded-full bg-primary-foreground/25 px-1.5 text-xs">
+            <span className="rounded-sm bg-primary-foreground/25 px-1.5 text-xs">
               {nbFiltres}
             </span>
           )}
@@ -281,23 +326,22 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
               type="button"
               onClick={() => setPanneau(false)}
               aria-label="Fermer"
-              className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-card text-lg hover:bg-accent"
+              className={`absolute top-3 right-3 ${boutonFermer}`}
             >
-              ×
+              <XIcon aria-hidden className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 font-serif text-2xl font-semibold">Filtres</h2>
+            <h2 className={`mb-6 ${titre.section}`}>Filtres</h2>
 
-            <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
-              Domaine
-            </div>
+            <div className={`mb-2.5 ${intitule}`}>Domaine</div>
             <div className="mb-6 flex flex-col gap-0.5">
               {DOMAINE_OPTIONS.map((d) => {
                 const count =
                   d === "toutes"
                     ? stages.length
                     : stages.filter((s) => s.transmetteur.domaine === d).length;
-                const label = d === "toutes" ? "Tous les domaines" : DOMAINE_LABELS[d];
+                const label =
+                  d === "toutes" ? "Tous les domaines" : DOMAINE_LABELS[d];
                 const on = domaine === d;
                 return (
                   <button
@@ -305,7 +349,9 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
                     type="button"
                     onClick={() => setDomaine(d)}
                     className={`flex items-center justify-between rounded-sm px-2.5 py-2 text-left text-sm font-medium ${
-                      on ? "bg-accent text-primary" : "text-foreground/80 hover:bg-accent/50"
+                      on
+                        ? "bg-accent text-primary"
+                        : "text-foreground/80 hover:bg-accent/50"
                     }`}
                   >
                     <span>{label}</span>
@@ -315,9 +361,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
               })}
             </div>
 
-            <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
-              Formes proposées
-            </div>
+            <div className={`mb-2.5 ${intitule}`}>Formes proposées</div>
             <div className="mb-6 flex flex-wrap gap-1.5">
               {TYPES_TRANSMISSION.map((nom) => {
                 const on = types.includes(nom);
@@ -327,7 +371,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
                     type="button"
                     onClick={() =>
                       setTypes((prev) =>
-                        on ? prev.filter((t) => t !== nom) : [...prev, nom]
+                        on ? prev.filter((t) => t !== nom) : [...prev, nom],
                       )
                     }
                     className={`rounded-sm border px-2.5 py-1.5 text-xs font-medium ${
@@ -363,9 +407,10 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
               <button
                 type="button"
                 onClick={() => setPanneau(false)}
-                className="rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+                className={bouton.primaire}
               >
-                Voir les {visibles.length} {visibles.length > 1 ? "dates" : "date"}
+                Voir les {visibles.length}{" "}
+                {visibles.length > 1 ? "dates" : "date"}
               </button>
             </div>
           </div>
@@ -376,8 +421,8 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
           inatteignables. */}
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         {/* Liste, défilante */}
-        <div className="min-h-0 overflow-y-auto border-r border-border">
-          <div className="flex items-baseline justify-between gap-3 px-6 pt-5 pb-3 sm:px-8">
+        <div className="border-border lg:min-h-0 lg:overflow-y-auto lg:border-r">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-6 pt-5 pb-3 sm:px-8">
             <div className="font-serif text-2xl font-semibold">
               {visibles.length} {visibles.length > 1 ? "dates" : "date"}
               <span className="ml-2 font-sans text-sm font-normal text-muted-foreground">
@@ -398,65 +443,80 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
 
           <div className="flex flex-col gap-3 px-6 pb-10 sm:px-8">
             {visibles.map((s) => {
-              const restantes = s.places !== null ? s.places - s.inscrits : null;
-              const complet = restantes === 0;
+              const restantes =
+                s.places !== null ? s.places - s.inscrits : null;
               return (
                 <Link
                   key={s.id}
                   href={`/fiche/${s.transmetteur.slug}#stage-${s.stageId}`}
                   onMouseEnter={() => setActif(s.id)}
                   onMouseLeave={() => setActif(null)}
-                  className={`flex h-36 overflow-hidden rounded-sm border bg-card ${
-                    actif === s.id ? "border-primary" : "border-border"
+                  // En ligne : la date d'abord, en bande à gauche — c'est ce
+                  // qu'on cherche dans cette liste —, puis la photo, puis les
+                  // mêmes pièces que la carte du stage sur la fiche.
+                  className={`group flex h-36 overflow-hidden rounded-sm border bg-card text-foreground hover:text-foreground ${
+                    actif === s.id ||
+                    (lieuSurvole !== null &&
+                      pointDeLaDate.get(s.id) === lieuSurvole)
+                      ? "border-primary"
+                      : "border-border"
                   }`}
                 >
-                  {/* Emplacement toujours présent, même sans photo, pour que
-                      toutes les cartes gardent le même gabarit. */}
-                  <div className="relative w-36 shrink-0 self-stretch bg-secondary">
+                  <BandeDate date={s.dateDebut} />
+
+                  {/* La photo encadrée, au format 3:2 — un peu moins allongé que
+                      la couverture de la fiche —, la forme posée dessus. Toujours présente, même vide, pour que les cartes
+                      gardent le même gabarit ; sur téléphone, la place manque
+                      et elle s'efface devant la date. */}
+                  <div className="relative my-3 ml-3 hidden h-30 w-45 shrink-0 self-center overflow-hidden rounded-sm border border-border bg-secondary sm:block">
                     {s.photo && (
                       <Image
                         src={s.photo}
                         alt={s.titre}
                         fill
-                        sizes="144px"
-                        className="object-cover"
+                        sizes="180px"
+                        className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                      />
+                    )}
+                    {s.type && (
+                      <EtiquetteForme
+                        forme={s.type}
+                        className="absolute top-2 left-2"
                       />
                     )}
                   </div>
 
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-4">
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span className="truncate font-semibold text-foreground">
-                        {formatDateRange(s.dateDebut, s.dateFin)}
-                      </span>
-                      {restantes !== null && (
-                        <span
-                          className={`shrink-0 font-semibold whitespace-nowrap ${complet ? "text-muted-foreground" : "text-[#4a6741]"}`}
-                        >
-                          {complet ? "Complet" : `${restantes} / ${s.places}`}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="line-clamp-1 font-serif text-lg font-semibold leading-tight">
+                    {/* Sur téléphone, sans photo, la forme revient ici. */}
+                    {s.type && (
+                      <EtiquetteForme
+                        forme={s.type}
+                        className="self-start sm:hidden"
+                      />
+                    )}
+                    <div className="line-clamp-1 font-serif text-xl leading-tight font-semibold">
                       {s.titre}
                     </div>
 
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                      {s.type && (
-                        <span className="truncate rounded-sm bg-accent px-2 py-0.5 text-[10.5px] tracking-wide whitespace-nowrap text-primary uppercase">
-                          {s.type}
-                        </span>
-                      )}
+                    <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <Repere icone={<ClockIcon />} libelle="Durée">
+                        {dureeDuStage(s.dateDebut, s.dateFin, s.duree)}
+                      </Repere>
                       {s.prix && (
-                        <span className="shrink-0 text-[13px] font-semibold whitespace-nowrap text-primary">
+                        <Repere icone={<TagIcon />} libelle="Prix" fort>
                           {s.prix}
-                        </span>
+                        </Repere>
                       )}
-                    </div>
+                    </dl>
 
-                    <div className="mt-auto truncate text-xs text-muted-foreground">
-                      {s.transmetteur.nom} · {s.transmetteur.lieuApproximatif}
+                    {restantes !== null && s.places !== null && (
+                      <div className="self-start">
+                        <Places restantes={restantes} total={s.places} />
+                      </div>
+                    )}
+
+                    <div className="mt-auto line-clamp-2 text-xs text-muted-foreground">
+                      {s.transmetteur.titre} · {s.transmetteur.lieuCourt}
                     </div>
                   </div>
                 </Link>
@@ -465,7 +525,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
 
             {visibles.length === 0 && (
               <div className="rounded-sm border border-border bg-card p-10 text-center">
-                <div className="mb-2 font-serif text-lg font-semibold">
+                <div className="mb-2 font-serif text-xl font-semibold">
                   {filtres.length > 0
                     ? "Aucune date dans cette zone"
                     : "Rien dans cette sélection"}
@@ -479,7 +539,7 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
                   <button
                     type="button"
                     onClick={resetFiltres}
-                    className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+                    className={bouton.primaire}
                   >
                     Tout effacer
                   </button>
@@ -490,11 +550,13 @@ export function StagesExplorer({ stages }: { stages: UpcomingStage[] }) {
         </div>
 
         {/* Carte */}
-        <div className="min-h-[420px] bg-secondary">
+        <div className="h-90 bg-secondary lg:h-auto lg:min-h-105">
           <FranceMap
             points={points}
-            activeId={actif}
-            onHover={setActif}
+            activeId={pointActif}
+            onHover={setLieuSurvole}
+            vignette={vignette}
+            infobulle={infobulle}
             onBoundsChange={setCadrage}
             focus={focus}
           />

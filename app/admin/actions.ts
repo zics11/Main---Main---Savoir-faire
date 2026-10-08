@@ -1,12 +1,11 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/dal";
 import { db } from "@/lib/db";
-import { stageDates, stages, temoignages, transmetteurs, users } from "@/lib/db/schema";
+import { stages, temoignages, transmetteurs, users } from "@/lib/db/schema";
 import {
   applyPhotos,
   champsManquants,
@@ -15,7 +14,6 @@ import {
   ErreurFiche,
   applyPortrait,
   inviteTransmetteur,
-  optionalStr,
   parseEmail,
   parseFicheFields,
   str,
@@ -29,7 +27,12 @@ import {
 } from "@/lib/activation";
 import { sendMail } from "@/lib/mailer";
 import { envoyerLienReinitialisation } from "@/lib/reinitialisation";
-import { deleteUploadedPhoto, saveUploadedPhoto } from "@/lib/upload";
+import {
+  enregistrerStage as enregistrerStageEtDates,
+  ErreurStage,
+  type EtatStage,
+} from "@/lib/stage";
+import { deleteUploadedPhoto } from "@/lib/upload";
 
 /**
  * Erreur de saisie réaffichée dans le formulaire, avec les valeurs soumises :
@@ -94,18 +97,17 @@ export async function updateFiche(
   }
 
   let slug = existing.slug;
-  let miseEnLigne = false;
   try {
     const fields = parseFicheFields(formData);
-    // Une fiche bloquée ne se publie pas, et rien d'incomplet ne part en
-    // ligne : sans savoir-faire, lieu ou point sur la carte, la fiche n'a
-    // rien à montrer ni où s'afficher.
-    const publiee = formData.get("publiee") === "on" && !existing.bloqueeLe;
-    if (publiee) {
+    // La visibilité ne passe plus par ce formulaire : elle se règle depuis
+    // la barre du bas, dans n'importe quel onglet (changerVisibilite). Une
+    // fiche en ligne doit pourtant le rester complète : sans savoir-faire,
+    // commune ou point sur la carte, elle n'aurait rien à montrer.
+    if (existing.publiee) {
       const manquants = champsManquants(fields);
       if (manquants.length) {
         throw new ErreurFiche(
-          `Impossible de publier : il manque ${manquants.join(", ")}.`
+          `La fiche est en ligne : il lui faut ${manquants.join(", ")}. Retirez-la du site avant de vider ces champs.`
         );
       }
     }
@@ -120,16 +122,6 @@ export async function updateFiche(
       .update(transmetteurs)
       .set({
         ...fields,
-        publiee,
-        // Trace du premier accord : ensuite, le transmetteur peut retirer et
-        // remettre sa fiche en ligne sans nouvelle validation.
-        premiereValidationLe:
-          publiee && !existing.premiereValidationLe
-            ? new Date()
-            : existing.premiereValidationLe,
-        // Une demande en cours n'est soldée que si la fiche part en ligne :
-        // éditer une fiche en attente ne doit pas effacer sa demande.
-        publicationDemandeeLe: publiee ? null : existing.publicationDemandeeLe,
         slug,
         updatedAt: new Date(),
       })
@@ -137,16 +129,12 @@ export async function updateFiche(
 
     await applyPhotos(transmetteurId, existing.photos, formData);
     await applyPortrait(transmetteurId, existing.photoPortrait, formData);
-    miseEnLigne = publiee && !existing.publiee;
   } catch (e) {
     if (e instanceof ErreurFiche) {
       return { erreur: e.message, valeurs: champsSaisis(formData) };
     }
     throw e;
   }
-
-  // Mise en ligne : le transmetteur l'apprend par email.
-  if (miseEnLigne) await prevenirMiseEnLigne({ ...existing, slug });
 
   revalidatePath("/admin");
   revalidatePath(`/admin/fiches/${transmetteurId}`);
@@ -385,91 +373,61 @@ export async function togglePubliee(transmetteurId: string) {
   if (!existing.publiee) await prevenirMiseEnLigne(existing);
 
   revalidatePath("/admin");
+  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  revalidatePath(`/fiche/${existing.slug}`);
   revalidatePath("/mes-stages");
 }
 
-// ─── Stages (admin can manage any transmetteur's) ───
-
-// One "heure | titre" pair per line, e.g. "7 h | Rafraîchi du levain" —
-// simplest way to edit a same-day schedule from a plain <textarea>.
-function parseProgramme(formData: FormData) {
-  return str(formData, "programme")
-    .split("\n")
-    .map((line) => line.split("|").map((s) => s.trim()))
-    .filter(([heure, titre]) => heure && titre)
-    .map(([heure, titre]) => ({ heure, titre }));
-}
-
-function parseStageFields(formData: FormData) {
-  return {
-    titre: str(formData, "titre"),
-    type: optionalStr(formData, "type"),
-    niveau: optionalStr(formData, "niveau"),
-    duree: optionalStr(formData, "duree"),
-    prix: optionalStr(formData, "prix"),
-    description: str(formData, "description"),
-    programme: parseProgramme(formData),
-    note: optionalStr(formData, "note"),
-  };
-}
-
-// Photos d'un stage : même logique (garder/ajouter/supprimer) que les
-// photos de la fiche, juste ciblée sur la table stages.
-async function applyStagePhotos(
-  stageId: string,
-  existingPhotos: string[],
-  formData: FormData
-) {
-  const keep = new Set(formData.getAll("keepPhotos").map(String));
-  const kept = existingPhotos.filter((p) => keep.has(p));
-  const removed = existingPhotos.filter((p) => !keep.has(p));
-
-  const newFiles = formData.getAll("photos").filter(
-    (f): f is File => f instanceof File && f.size > 0
-  );
-
-  const added: string[] = [];
-  for (const file of newFiles) {
-    added.push(await saveUploadedPhoto(file));
-  }
-
-  await Promise.all(removed.map((p) => deleteUploadedPhoto(p)));
-
-  await db
-    .update(stages)
-    .set({ photos: [...kept, ...added] })
-    .where(eq(stages.id, stageId));
-}
-
-export async function createStage(transmetteurId: string, formData: FormData) {
-  await requireAdmin();
-  const stageId = randomUUID();
-  await db.insert(stages).values({
-    id: stageId,
-    transmetteurId,
-    ...parseStageFields(formData),
-  });
-  await applyStagePhotos(stageId, [], formData);
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
-}
-
-export async function updateStage(
+/**
+ * La case « Fiche visible sur le site » de la barre du bas : elle agit tout
+ * de suite, depuis n'importe quel onglet. Rien ne change si la fiche est
+ * déjà dans l'état demandé.
+ */
+export async function changerVisibilite(
   transmetteurId: string,
-  stageId: string,
-  formData: FormData
-) {
+  visible: boolean
+): Promise<string | null> {
   await requireAdmin();
-  const existing = await db.query.stages.findFirst({
-    where: eq(stages.id, stageId),
+  const existing = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
   });
-  if (!existing) throw new Error("Stage introuvable.");
+  if (!existing) return "Fiche introuvable.";
+  if (existing.publiee === visible) return null;
+  if (existing.bloqueeLe) {
+    return "Fiche bloquée : levez d'abord le blocage dans l'onglet Administration.";
+  }
+  const manquants = champsManquants(existing);
+  if (visible && manquants.length) {
+    return `Impossible de mettre en ligne : il manque ${manquants.join(", ")}.`;
+  }
+  await togglePubliee(transmetteurId);
+  return null;
+}
 
-  await db
-    .update(stages)
-    .set({ ...parseStageFields(formData), updatedAt: new Date() })
-    .where(eq(stages.id, stageId));
-  await applyStagePhotos(stageId, existing.photos, formData);
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
+// ─── Stages et leurs dates ───
+// Un stage et toutes ses dates s'enregistrent d'un seul geste (lib/stage).
+
+export async function enregistrerStage(
+  transmetteurId: string,
+  _precedent: EtatStage,
+  formData: FormData
+): Promise<EtatStage> {
+  await requireAdmin();
+  try {
+    const stageId = await enregistrerStageEtDates(
+      transmetteurId,
+      str(formData, "stageId") || null,
+      formData
+    );
+    revalidatePath(`/admin/fiches/${transmetteurId}`);
+    return { ok: true, stageId };
+  } catch (e) {
+    if (e instanceof ErreurStage) {
+      revalidatePath(`/admin/fiches/${transmetteurId}`);
+      return { ok: false, erreur: e.message };
+    }
+    throw e;
+  }
 }
 
 export async function deleteStage(transmetteurId: string, stageId: string) {
@@ -482,74 +440,70 @@ export async function deleteStage(transmetteurId: string, stageId: string) {
   revalidatePath(`/admin/fiches/${transmetteurId}`);
 }
 
-// ─── Dates d'un stage (un même stage peut avoir plusieurs dates) ───
+// ─── Témoignages ───
+// Recueillis par l'association (pas de dépôt public), et enregistrés d'un
+// seul geste depuis la barre du bas : le formulaire envoie la liste complète
+// telle qu'elle doit être, et on aligne la base dessus.
 
-function parseStageDateFields(formData: FormData) {
-  const dateDebut = new Date(str(formData, "dateDebut"));
-  const dateFin = new Date(str(formData, "dateFin"));
-  if (Number.isNaN(dateDebut.getTime()) || Number.isNaN(dateFin.getTime())) {
-    throw new Error("Dates invalides.");
-  }
-  const placesRaw = str(formData, "places");
-  const inscritsRaw = str(formData, "inscrits");
-  return {
-    dateDebut,
-    dateFin,
-    places: placesRaw === "" ? null : Number(placesRaw),
-    inscrits: inscritsRaw === "" ? 0 : Number(inscritsRaw),
-    publiee: formData.get("publiee") === "on",
-  };
-}
+export type EtatTemoignages = { ok: true } | { ok: false; erreur: string } | null;
 
-export async function createStageDate(
+type TemoignageSaisi = {
+  id: string | null;
+  texte: string;
+  auteur: string;
+  contexte: string;
+};
+
+export async function enregistrerTemoignages(
   transmetteurId: string,
-  stageId: string,
+  _precedent: EtatTemoignages,
   formData: FormData
-) {
+): Promise<EtatTemoignages> {
   await requireAdmin();
-  await db.insert(stageDates).values({
-    id: randomUUID(),
-    stageId,
-    ...parseStageDateFields(formData),
+
+  let saisis: TemoignageSaisi[];
+  try {
+    const brut = JSON.parse(str(formData, "temoignages") || "[]");
+    saisis = (Array.isArray(brut) ? brut : []).map((t) => ({
+      id: typeof t?.id === "string" ? t.id : null,
+      texte: String(t?.texte ?? "").trim(),
+      auteur: String(t?.auteur ?? "").trim(),
+      contexte: String(t?.contexte ?? "").trim(),
+    }));
+  } catch {
+    return { ok: false, erreur: "Le formulaire est mal formé : rechargez la page." };
+  }
+  const incomplet = saisis.findIndex((t) => !t.texte || !t.auteur || !t.contexte);
+  if (incomplet !== -1) {
+    return {
+      ok: false,
+      erreur: `Témoignage n° ${incomplet + 1} : le texte, l'auteur et le contexte sont obligatoires.`,
+    };
+  }
+
+  // Seuls les témoignages de cette fiche peuvent être modifiés ou retirés.
+  const existants = await db.query.temoignages.findMany({
+    where: eq(temoignages.transmetteurId, transmetteurId),
+    columns: { id: true },
   });
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
-}
+  const connus = new Set(existants.map((t) => t.id));
 
-export async function updateStageDate(
-  transmetteurId: string,
-  stageDateId: string,
-  formData: FormData
-) {
-  await requireAdmin();
-  await db
-    .update(stageDates)
-    .set({ ...parseStageDateFields(formData), updatedAt: new Date() })
-    .where(eq(stageDates.id, stageDateId));
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
-}
+  db.transaction((tx) => {
+    const gardes = new Set<string>();
+    for (const t of saisis) {
+      const valeurs = { texte: t.texte, auteur: t.auteur, contexte: t.contexte };
+      if (t.id && connus.has(t.id)) {
+        tx.update(temoignages).set(valeurs).where(eq(temoignages.id, t.id)).run();
+        gardes.add(t.id);
+      } else {
+        tx.insert(temoignages).values({ transmetteurId, ...valeurs }).run();
+      }
+    }
+    for (const id of connus) {
+      if (!gardes.has(id)) tx.delete(temoignages).where(eq(temoignages.id, id)).run();
+    }
+  });
 
-export async function deleteStageDate(transmetteurId: string, stageDateId: string) {
-  await requireAdmin();
-  await db.delete(stageDates).where(eq(stageDates.id, stageDateId));
   revalidatePath(`/admin/fiches/${transmetteurId}`);
-}
-
-// ─── Témoignages (curated by admin — no public submission flow) ───
-
-export async function createTemoignage(transmetteurId: string, formData: FormData) {
-  await requireAdmin();
-  const texte = str(formData, "texte");
-  const auteur = str(formData, "auteur");
-  const contexte = str(formData, "contexte");
-  if (!texte || !auteur || !contexte) {
-    throw new Error("Le texte, l'auteur et le contexte sont obligatoires.");
-  }
-  await db.insert(temoignages).values({ transmetteurId, texte, auteur, contexte });
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
-}
-
-export async function deleteTemoignage(transmetteurId: string, temoignageId: string) {
-  await requireAdmin();
-  await db.delete(temoignages).where(eq(temoignages.id, temoignageId));
-  revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return { ok: true };
 }

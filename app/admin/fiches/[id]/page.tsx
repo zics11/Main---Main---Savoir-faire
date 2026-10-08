@@ -4,13 +4,20 @@ import { CompteTransmetteur } from "@/components/admin/CompteTransmetteur";
 import { BlocageFiche } from "@/components/admin/BlocageFiche";
 import { ZoneDangereuse } from "@/components/admin/ZoneDangereuse";
 import { FicheForm } from "@/components/admin/FicheForm";
-import { StagesManager } from "@/components/admin/StagesManager";
 import { TemoignagesManager } from "@/components/admin/TemoignagesManager";
 import { FicheTabs } from "@/components/shared/FicheTabs";
+import { EditeurStages } from "@/components/stages/EditeurStages";
 import { db } from "@/lib/db";
+import { etatFiche } from "@/lib/etat-fiche";
 import { champsManquants } from "@/lib/fiche";
 import { transmetteurs, users } from "@/lib/db/schema";
-import { updateFiche } from "@/app/admin/actions";
+import {
+  changerVisibilite,
+  deleteStage,
+  enregistrerStage,
+  enregistrerTemoignages,
+  updateFiche,
+} from "@/app/admin/actions";
 
 export default async function EditerFichePage({
   params,
@@ -55,14 +62,26 @@ export default async function EditerFichePage({
       </div>
 
       <FicheTabs
+        barre={{
+          etat: etatFiche({ ...fiche, manquants: champsManquants(fiche) }),
+          lienPublic: `/fiche/${fiche.slug}`,
+          publiee: fiche.publiee,
+          publication: {
+            changerVisibilite: changerVisibilite.bind(null, fiche.id),
+            caseVerrouillee:
+              fiche.premiereValidationLe === null || fiche.bloqueeLe !== null,
+            premiereMiseEnLigne:
+              fiche.premiereValidationLe === null &&
+              fiche.bloqueeLe === null &&
+              champsManquants(fiche).length === 0,
+          },
+        }}
         nbStages={fiche.stages.length}
         nbTemoignages={fiche.temoignages.length}
         fiche={
           <div className="flex flex-col gap-8">
             <FicheForm
               mode="edit"
-              manquants={champsManquants(fiche)}
-              bloquee={fiche.bloqueeLe !== null}
               action={updateFiche.bind(null, fiche.id)}
               values={{
                 nom: fiche.nom,
@@ -76,6 +95,8 @@ export default async function EditerFichePage({
                 email: fiche.email,
                 lat: fiche.lat,
                 lng: fiche.lng,
+                ville: fiche.ville,
+                codePostal: fiche.codePostal,
                 lieuApproximatif: fiche.lieuApproximatif,
                 modalitesAccueil: fiche.modalitesAccueil,
                 hebergement: fiche.hebergement,
@@ -113,11 +134,17 @@ export default async function EditerFichePage({
             <ZoneDangereuse transmetteurId={fiche.id} nom={fiche.nom} />
           </div>
         }
-        stages={<StagesManager transmetteurId={fiche.id} stages={fiche.stages} />}
+        stages={
+          <EditeurStages
+            stages={fiche.stages}
+            enregistrer={enregistrerStage.bind(null, fiche.id)}
+            supprimer={deleteStage.bind(null, fiche.id)}
+          />
+        }
         temoignages={
           <TemoignagesManager
-            transmetteurId={fiche.id}
             temoignages={fiche.temoignages}
+            enregistrer={enregistrerTemoignages.bind(null, fiche.id)}
           />
         }
       />

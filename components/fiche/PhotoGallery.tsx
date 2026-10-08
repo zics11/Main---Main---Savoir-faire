@@ -43,7 +43,7 @@ export function PhotoGallery({ photos, alt }: { photos: string[]; alt: string })
                 className="object-cover"
               />
               {dernierVisible && reste > 0 && (
-                <span className="absolute right-3 bottom-3 rounded-full bg-card px-4 py-2 text-xs font-semibold shadow-sm">
+                <span className="absolute right-3 bottom-3 rounded-sm bg-card px-4 py-2 text-xs font-semibold shadow-sm">
                   Voir les {photos.length} photos
                 </span>
               )}

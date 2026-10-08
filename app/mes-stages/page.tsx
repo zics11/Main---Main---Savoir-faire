@@ -3,16 +3,18 @@ import Link from "next/link";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { FicheForm } from "@/components/admin/FicheForm";
-import { MyStagesManager } from "@/components/mes-stages/MyStagesManager";
 import { DemandePublication } from "@/components/mes-stages/DemandePublication";
 import { PanneauAccueil } from "@/components/mes-stages/PanneauAccueil";
 import { FicheTabs } from "@/components/shared/FicheTabs";
+import { EditeurStages } from "@/components/stages/EditeurStages";
 import { DOMAINE_LABELS } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { requireMyTransmetteur } from "@/lib/dal";
 import { champsManquants, champsManquantsDemande } from "@/lib/fiche";
+import { etatFicheTransmetteur } from "@/lib/etat-fiche";
 import { stages } from "@/lib/db/schema";
-import { updateMyFiche } from "./actions";
+import { deleteMyStage, enregistrerMonStage, updateMyFiche } from "./actions";
+import { surtitre } from "@/lib/style";
 
 export default async function MonEspacePage({
   searchParams,
@@ -32,7 +34,7 @@ export default async function MonEspacePage({
       <Header />
       {/* pb-28 : la barre d'enregistrement est fixée au bas de l'écran. */}
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pt-10 pb-28 sm:px-12">
-        <div className="mb-2 text-xs tracking-wide text-primary uppercase">
+        <div className={`mb-2 ${surtitre}`}>
           Mon espace · {DOMAINE_LABELS[fiche.domaine]}
         </div>
         <h1 className="mb-2 font-serif text-3xl font-semibold">{fiche.nom}</h1>
@@ -65,14 +67,20 @@ export default async function MonEspacePage({
         />
 
         <FicheTabs
+          barre={{
+            etat: etatFicheTransmetteur({
+              ...fiche,
+              manquants: champsManquants(fiche),
+            }),
+            lienPublic: `/fiche/${fiche.slug}`,
+            publiee: fiche.publiee,
+          }}
           nbStages={mesStages.length}
           fiche={
             <FicheForm
               mode="edit"
               espace="transmetteur"
-              manquants={champsManquants(fiche)}
               action={updateMyFiche}
-              lienPublic={`/fiche/${fiche.slug}`}
               values={{
                 nom: fiche.nom,
                 nomLieu: fiche.nomLieu,
@@ -85,6 +93,8 @@ export default async function MonEspacePage({
                 email: fiche.email,
                 lat: fiche.lat,
                 lng: fiche.lng,
+                ville: fiche.ville,
+                codePostal: fiche.codePostal,
                 lieuApproximatif: fiche.lieuApproximatif,
                 modalitesAccueil: fiche.modalitesAccueil,
                 hebergement: fiche.hebergement,
@@ -96,7 +106,14 @@ export default async function MonEspacePage({
               }}
             />
           }
-          stages={<MyStagesManager stages={mesStages} />}
+          stages={
+            <EditeurStages
+              titre="Mes stages"
+              stages={mesStages}
+              enregistrer={enregistrerMonStage}
+              supprimer={deleteMyStage}
+            />
+          }
         />
       </main>
       <Footer />

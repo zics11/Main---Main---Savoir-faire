@@ -50,6 +50,12 @@ export function LocationPicker({
     map.on("click", (e) => {
       const { lat, lng } = e.lngLat;
       setCoords({ lat, lng });
+      // Un clic sur la carte ne déclenche aucun événement de saisie : on en
+      // émet un, pour que le formulaire sache qu'il a quelque chose à
+      // enregistrer.
+      containerRef.current?.dispatchEvent(
+        new Event("change", { bubbles: true })
+      );
       if (markerRef.current) {
         markerRef.current.setLngLat([lng, lat]);
       } else {

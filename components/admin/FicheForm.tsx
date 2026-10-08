@@ -6,9 +6,13 @@ import type { FicheFormState } from "@/app/admin/actions";
 import { DOMAINE_LABELS } from "@/lib/constants";
 import { PHOTOS_MINIMUM } from "@/lib/fiche-constantes";
 import { DOMAINES } from "@/lib/db/schema";
-import { PhotosField } from "@/components/shared/PhotosField";
+import { BarreEnregistrement } from "@/components/shared/BarreEnregistrement";
+import { GaleriePhotosAutonome } from "@/components/shared/GaleriePhotos";
+import { useModificationsEnCours } from "@/components/shared/ModificationsEnCours";
 import { validatePhotoFile } from "@/lib/photo-validation";
 import { LocationPicker } from "./LocationPicker";
+import { champ } from "@/lib/style";
+import { ImagePlusIcon, Trash2Icon, UserRoundIcon } from "lucide-react";
 
 export type FicheFormValues = {
   nom: string;
@@ -22,6 +26,8 @@ export type FicheFormValues = {
   email: string;
   lat: number | null;
   lng: number | null;
+  ville: string | null;
+  codePostal: string | null;
   lieuApproximatif: string | null;
   modalitesAccueil: string | null;
   hebergement: boolean;
@@ -44,6 +50,8 @@ const EMPTY_VALUES: FicheFormValues = {
   email: "",
   lat: null,
   lng: null,
+  ville: "",
+  codePostal: "",
   lieuApproximatif: "",
   modalitesAccueil: "",
   hebergement: false,
@@ -69,8 +77,7 @@ function Field({
   );
 }
 
-const inputClass =
-  "w-full rounded-sm border border-input bg-card px-3 py-2.5 text-sm";
+const inputClass = champ;
 
 // Portrait du transmetteur (une seule photo, distincte de la galerie ci-dessus).
 function PortraitField({ existingPortrait }: { existingPortrait: string | null }) {
@@ -140,22 +147,25 @@ function PortraitField({ existingPortrait }: { existingPortrait: string | null }
           ) : showExisting ? (
             <Image src={existingPortrait} alt="" fill sizes="80px" className="object-cover" />
           ) : (
-            <span className="text-[11px] text-muted-foreground">Aucune</span>
+            <UserRoundIcon aria-hidden className="h-8 w-8 text-primary/40" />
           )}
         </div>
         <div className="flex flex-col items-start gap-1.5">
+          {/* Le même geste que la galerie : cadre en pointillés, icône. */}
           <label
             htmlFor="portrait-input"
-            className="cursor-pointer rounded-sm border border-dashed border-primary bg-accent px-3.5 py-2 text-xs font-medium text-primary hover:bg-accent/70"
+            className="flex cursor-pointer items-center gap-1.5 rounded-sm border-2 border-dashed border-primary/50 bg-accent/40 px-3.5 py-2 text-sm font-medium text-primary hover:bg-accent"
           >
-            {showExisting || preview ? "Changer la photo" : "+ Ajouter une photo"}
+            <ImagePlusIcon aria-hidden className="h-4 w-4" />
+            {showExisting || preview ? "Changer le portrait" : "Ajouter un portrait"}
           </label>
           {(showExisting || preview) && (
             <button
               type="button"
               onClick={clear}
-              className="text-xs text-muted-foreground hover:text-destructive"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive"
             >
+              <Trash2Icon aria-hidden className="h-4 w-4" />
               Retirer
             </button>
           )}
@@ -174,7 +184,7 @@ function PortraitField({ existingPortrait }: { existingPortrait: string | null }
         />
         {removed && <input type="hidden" name="removePortrait" value="on" />}
       </div>
-      {erreur && <p className="text-xs text-destructive">{erreur}</p>}
+      {erreur && <p className="text-sm text-destructive">{erreur}</p>}
     </div>
   );
 }
@@ -184,9 +194,6 @@ export function FicheForm({
   values,
   action,
   espace = "admin",
-  lienPublic,
-  manquants = [],
-  bloquee = false,
 }: {
   mode: "create" | "edit";
   values?: FicheFormValues;
@@ -196,14 +203,35 @@ export function FicheForm({
   ) => Promise<FicheFormState>;
   /** "transmetteur" : sans la case de publication, email en lecture seule. */
   espace?: "admin" | "transmetteur";
-  /** Adresse de la fiche publique, affichée dans l'espace transmetteur. */
-  lienPublic?: string;
-  /** Ce qu'il reste à remplir avant que la fiche puisse être publiée. */
-  manquants?: string[];
-  /** Fiche suspendue par l'association : la publication est verrouillée. */
-  bloquee?: boolean;
 }) {
-  const [etat, enregistrer, enCours] = useActionState(action, null);
+  // Quelque chose a été saisi depuis le dernier enregistrement : la barre du
+  // bas le rappelle, l'onglet aussi, et quitter la page demande confirmation.
+  const [modifie, setModifie] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [etat, enregistrer, enCours] = useActionState(
+    async (precedent: FicheFormState, donnees: FormData) => {
+      const resultat = await action(precedent, donnees);
+      // Une erreur laisse la marque : la saisie attend toujours.
+      if (!resultat || !("erreur" in resultat)) setModifie(false);
+      return resultat;
+    },
+    null
+  );
+  useModificationsEnCours("fiche", modifie);
+
+  // Écoute native : elle voit aussi les champs que React ne suit pas
+  // (photos, point posé sur la carte).
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const noter = () => setModifie(true);
+    form.addEventListener("input", noter);
+    form.addEventListener("change", noter);
+    return () => {
+      form.removeEventListener("input", noter);
+      form.removeEventListener("change", noter);
+    };
+  }, []);
   // Après une erreur, on repart de ce qui a été saisi plutôt que des valeurs
   // d'origine : React a vidé le formulaire en terminant l'action.
   const erreur = etat && "erreur" in etat ? etat : null;
@@ -214,7 +242,7 @@ export function FicheForm({
   const estTransmetteur = espace === "transmetteur";
 
   return (
-    <form action={enregistrer} className="flex flex-col gap-6">
+    <form ref={formRef} action={enregistrer} className="flex flex-col gap-6">
       <div className="flex flex-col gap-6">
         <section className="rounded-sm border border-border bg-card p-6">
           <h2 className="mb-4 font-serif text-xl font-semibold">Identité</h2>
@@ -291,15 +319,42 @@ export function FicheForm({
 
         <section className="rounded-sm border border-border bg-card p-6">
           <h2 className="mb-4 font-serif text-xl font-semibold">Localisation</h2>
-          <Field label="Lieu approximatif affiché publiquement">
-            <input
-              name="lieuApproximatif"
-              defaultValue={v.lieuApproximatif ?? ""}
-              placeholder="ex : près de Durban-Corbières"
-              className={inputClass}
-            />
-          </Field>
+          {/* La commune situe la fiche ; l'adresse exacte, elle, n'est
+              jamais demandée. */}
+          <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
+            <Field label="Ville">
+              <input
+                name="ville"
+                defaultValue={v.ville ?? ""}
+                placeholder="ex : Lagrasse"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Code postal">
+              <input
+                name="codePostal"
+                defaultValue={v.codePostal ?? ""}
+                inputMode="numeric"
+                pattern="[0-9]{5}"
+                maxLength={5}
+                placeholder="11220"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <div className="mt-4">
+            <Field label="Complément de lieu (facultatif)">
+              <input
+                name="lieuApproximatif"
+                defaultValue={v.lieuApproximatif ?? ""}
+                placeholder="ex : à 10 min de Lézignan"
+                className={inputClass}
+              />
+            </Field>
+          </div>
           <p className="mt-3 mb-2 text-xs text-muted-foreground">
+            La ville et le code postal sont nécessaires à la mise en ligne. Ils
+            s&apos;affichent publiquement sous la forme « Lagrasse (11220) ».
             Cliquez sur la carte pour placer le point (aucune adresse exacte
             n&apos;est demandée, pour protéger la vie privée du
             transmetteur).
@@ -323,9 +378,13 @@ export function FicheForm({
           <h2 className="mb-1 font-serif text-xl font-semibold">Photos</h2>
           <p className="mb-4 text-xs text-muted-foreground">
             {PHOTOS_MINIMUM} photos minimum pour pouvoir demander la
-            publication de la fiche.
+            publication de la fiche. La photo d&apos;accueil ouvre la fiche, et
+            la représente sur la carte : choisissez-la d&apos;un clic sur
+            l&apos;étoile.
           </p>
-          <PhotosField existingPhotos={v.photos} />
+          {/* Remontée quand les photos enregistrées changent : la galerie
+              repart alors de ce qui est en ligne. */}
+          <GaleriePhotosAutonome key={v.photos.join("|")} chemins={v.photos} />
         </section>
 
         <section className="rounded-sm border border-border bg-card p-6">
@@ -369,83 +428,17 @@ export function FicheForm({
         </section>
       </div>
 
-      {/* Barre d'enregistrement fixée au bas de l'écran : elle reste sous la
-          main où qu'on soit dans la page, pas seulement dans le formulaire. */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3 sm:px-8">
-        <div className="text-sm">
-          {estTransmetteur ? (
-            <>
-              <span className="font-medium">
-                {v.publiee
-                  ? "Votre fiche est en ligne"
-                  : "Votre fiche n'est pas encore en ligne"}
-              </span>{" "}
-              <span className="text-muted-foreground">
-                {v.publiee
-                  ? "Vos modifications sont visibles dès l'enregistrement."
-                  : manquants.length
-                    ? `Il reste à renseigner ${manquants.join(", ")}.`
-                    : "L'association la publiera."}
-              </span>
-              {v.publiee && lienPublic && (
-                <a
-                  href={lienPublic}
-                  target="_blank"
-                  rel="noopener"
-                  className="ml-2 font-medium underline underline-offset-2"
-                >
-                  Voir ma fiche publique ↗
-                </a>
-              )}
-            </>
-          ) : (
-            <>
-              <label className="flex items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  name="publiee"
-                  defaultChecked={v.publiee}
-                  disabled={bloquee || manquants.length > 0}
-                />
-                <span>Fiche visible sur le site</span>
-              </label>
-              {(bloquee || manquants.length > 0) && (
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  {bloquee
-                    ? "Fiche bloquée : levez le blocage pour pouvoir la publier."
-                    : `Publication impossible tant qu'il manque ${manquants.join(", ")}.`}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          {erreur && (
-            <p role="alert" className="text-sm text-destructive">
-              {erreur.erreur}
-            </p>
-          )}
-          {info && (
-            <p role="status" className="max-w-md text-sm text-[#4f6b3a]">
-              {info}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={enCours}
-            className="rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
-          >
-            {enCours
-              ? "Enregistrement…"
-              : mode === "create"
-                ? "Créer la fiche"
-                : "Enregistrer"}
-          </button>
-        </div>
-        </div>
-      </div>
+      {/* La barre du bas, la même dans chaque onglet (case « Fiche visible »
+          et « Publier » compris) : ici, elle enregistre la fiche. */}
+      <BarreEnregistrement
+        modifie={modifie}
+        enCours={enCours}
+        erreur={erreur?.erreur}
+        info={info}
+        enregistrer={{
+          libelle: mode === "create" ? "Créer la fiche" : "Enregistrer",
+        }}
+      />
     </form>
   );
 }

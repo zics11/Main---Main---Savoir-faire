@@ -52,7 +52,9 @@
   --muted-foreground: #8a8072;
   --accent: #f6e8de;
   --accent-foreground: #a3512a;
-  --destructive: #a3512a;
+  /* Le rouge des fiches bloquées : une erreur ou une suppression ne doit
+     pas se confondre avec le terracotta des boutons principaux. */
+  --destructive: #9d2f2f;
   --destructive-foreground: #faf8f4;
   --success: #eef3ec;
   --success-foreground: #4a6741;
@@ -82,6 +84,13 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* Le cadre de focus clavier : plein et terracotta, plutôt que le cadre
+     automatique du navigateur, qui ignore la couleur et sort en bleu. */
+  :focus-visible {
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground;
@@ -124,12 +133,20 @@
   box-shadow: 0 6px 20px rgb(43 38 32 / 0.15);
 }
 .vignette-transmetteur .maplibregl-popup-close-button {
-  width: 26px;
-  height: 26px;
+  /* Petit et rond : posée sur la photo, la croix doit se faire discrète.
+     Le « × » de MapLibre est un caractère, que la police ne centre jamais
+     dans le cercle : on le masque et on dessine la croix (celle de lucide). */
+  width: 20px;
+  height: 20px;
+  padding: 0;
   border-radius: 50%;
-  background: var(--card);
-  color: var(--foreground);
-  font-size: 16px;
-  line-height: 1;
+  font-size: 0;
+  background: var(--card)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b2620' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E")
+    center / 11px no-repeat;
   margin: 6px;
+  box-shadow: 0 1px 3px rgb(43 38 32 / 0.2);
+}
+.vignette-transmetteur .maplibregl-popup-close-button:hover {
+  background-color: var(--secondary);
 }

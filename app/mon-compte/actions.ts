@@ -35,7 +35,7 @@ export type CompteState = { ok: boolean; message: string } | null;
  */
 export async function definirMotDePasse(
   _prev: CompteState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CompteState> {
   const user = await requireUser();
   const motDePasse = String(formData.get("password") ?? "");
@@ -85,10 +85,12 @@ export async function definirMotDePasse(
  */
 export async function changerMonEmail(
   _prev: CompteState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CompteState> {
   const user = await requireUser();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
   if (!email.includes("@")) {
     return { ok: false, message: "Adresse email invalide." };
   }
@@ -132,7 +134,8 @@ export async function changerMonEmail(
     await annulerChangementEmail(user.id);
     return {
       ok: false,
-      message: "L'email de confirmation n'a pas pu partir : rien n'a été changé.",
+      message:
+        "L'email de confirmation n'a pas pu partir : rien n'a été changé.",
     };
   }
 
@@ -144,7 +147,7 @@ export async function changerMonEmail(
     html: alerteAdresseEmailHtml(email),
     text: alerteAdresseEmailText(email),
   }).catch((err) =>
-    console.error(`Address change alert to ${user.email} failed:`, err)
+    console.error(`Address change alert to ${user.email} failed:`, err),
   );
 
   revalidatePath("/mon-compte");
@@ -187,13 +190,17 @@ export async function preparerDoubleAuthentification() {
     .where(eq(users.id, user.id));
 
   const uri = uriOtpauth(secret, user.email!);
-  return { secret, uri, qr: await QRCode.toString(uri, { type: "svg", margin: 1 }) };
+  return {
+    secret,
+    uri,
+    qr: await QRCode.toString(uri, { type: "svg", margin: 1 }),
+  };
 }
 
 /** Vérifie un premier code : c'est ce qui rend la protection effective. */
 export async function activerDoubleAuthentification(
   _prev: TotpState,
-  formData: FormData
+  formData: FormData,
 ): Promise<TotpState> {
   const user = await requireAdmin();
   const compte = await db.query.users.findFirst({
@@ -206,10 +213,13 @@ export async function activerDoubleAuthentification(
   if (
     !verifierCodeTotp(
       compte.totpSecretEnAttente,
-      String(formData.get("code") ?? "")
+      String(formData.get("code") ?? ""),
     )
   ) {
-    return { ok: false, message: "Code incorrect. Vérifiez l'heure de votre téléphone." };
+    return {
+      ok: false,
+      message: "Code incorrect. Vérifiez l'heure de votre téléphone.",
+    };
   }
 
   await db
@@ -233,14 +243,15 @@ export async function activerDoubleAuthentification(
 /** Désactivation, sous réserve du mot de passe et d'un code valide. */
 export async function desactiverDoubleAuthentification(
   _prev: TotpState,
-  formData: FormData
+  formData: FormData,
 ): Promise<TotpState> {
   const user = await requireAdmin();
   const compte = await db.query.users.findFirst({
     where: eq(users.id, user.id),
     columns: { passwordHash: true, totpSecret: true },
   });
-  if (!compte?.totpSecret) return { ok: false, message: "Elle n'est pas activée." };
+  if (!compte?.totpSecret)
+    return { ok: false, message: "Elle n'est pas activée." };
 
   if (compte.passwordHash) {
     const motDePasse = String(formData.get("motDePasse") ?? "");
@@ -248,7 +259,9 @@ export async function desactiverDoubleAuthentification(
       return { ok: false, message: "Mot de passe incorrect." };
     }
   }
-  if (!verifierCodeTotp(compte.totpSecret, String(formData.get("code") ?? ""))) {
+  if (
+    !verifierCodeTotp(compte.totpSecret, String(formData.get("code") ?? ""))
+  ) {
     return { ok: false, message: "Code incorrect." };
   }
 
@@ -264,4 +277,29 @@ export async function desactiverDoubleAuthentification(
 
   revalidatePath("/mon-compte");
   return { ok: true, message: "Double authentification désactivée." };
+}
+
+/**
+ * Ce qu'il faut pour afficher le compte ailleurs que sur sa page : la fenêtre
+ * modale du menu le demande à l'ouverture, plutôt que de charger ces données
+ * sur chaque page du site.
+ */
+export async function donneesCompte() {
+  const session = await requireUser();
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.id),
+    columns: {
+      email: true,
+      passwordHash: true,
+      emailEnAttente: true,
+      totpActiveLe: true,
+    },
+  });
+  return {
+    email: user?.email ?? "",
+    aUnMotDePasse: user?.passwordHash != null,
+    enAttente: user?.emailEnAttente ?? null,
+    // La double authentification ne concerne que l'association.
+    doubleAuth: session.role === "admin" ? user?.totpActiveLe != null : null,
+  };
 }

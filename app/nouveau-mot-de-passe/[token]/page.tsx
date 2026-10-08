@@ -3,6 +3,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { NouveauMotDePasseForm } from "@/components/compte/NouveauMotDePasseForm";
 import { compteDuJetonReinit } from "@/lib/activation";
+import { bouton, surtitre } from "@/lib/style";
 
 export default async function NouveauMotDePassePage({
   params,
@@ -14,7 +15,7 @@ export default async function NouveauMotDePassePage({
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-24">
-        <div className="mb-2 text-xs tracking-wider text-primary uppercase">
+        <div className={`mb-2 ${surtitre}`}>
           Mot de passe
         </div>
 
@@ -41,7 +42,7 @@ export default async function NouveauMotDePassePage({
             </p>
             <Link
               href="/mot-de-passe-oublie"
-              className="rounded-sm bg-primary px-6 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+              className={bouton.primaire}
             >
               Demander un nouveau lien
             </Link>

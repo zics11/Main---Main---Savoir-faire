@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { deleteFiche } from "@/app/admin/actions";
 import { ModaleConfirmation } from "@/components/ui/ModaleConfirmation";
+import { bouton, champ } from "@/lib/style";
 
 /**
  * Suppression définitive, en deux fenêtres : la seconde demande de recopier
@@ -33,7 +34,7 @@ export function ZoneDangereuse({
     >
       <h2
         style={{ color: "var(--statut-bloquee)" }}
-        className="mb-2 font-serif text-lg font-semibold"
+        className="mb-2 font-serif text-xl font-semibold"
       >
         Zone dangereuse
       </h2>
@@ -44,7 +45,7 @@ export function ZoneDangereuse({
       <button
         type="button"
         onClick={() => setEtape("prevenu")}
-        className="rounded-sm border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-accent"
+        className={bouton.danger}
       >
         Supprimer la fiche
       </button>
@@ -60,14 +61,14 @@ export function ZoneDangereuse({
             <button
               type="button"
               onClick={() => setEtape("confirmation")}
-              className="rounded-sm bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+              className={bouton.primaire}
             >
               Continuer
             </button>
             <button
               type="button"
               onClick={fermer}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className={bouton.discret}
             >
               Annuler
             </button>
@@ -89,20 +90,20 @@ export function ZoneDangereuse({
               value={saisie}
               onChange={(e) => setSaisie(e.target.value)}
               aria-label="Nom de la fiche à supprimer"
-              className="w-full rounded-sm border border-input bg-card px-3 py-2 text-sm"
+              className={champ}
             />
             <div className="flex flex-wrap items-center gap-4">
               <button
                 type="submit"
                 disabled={saisie.trim() !== nom}
-                className="rounded-sm bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-50"
+                className={bouton.danger}
               >
                 Supprimer définitivement
               </button>
               <button
                 type="button"
                 onClick={fermer}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={bouton.discret}
               >
                 Annuler
               </button>

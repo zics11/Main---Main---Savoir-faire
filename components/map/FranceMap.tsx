@@ -4,13 +4,16 @@ import { useCallback, useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Supercluster from "supercluster";
+import { DOMAINE_LABELS } from "@/lib/constants";
+import { etiquette as classeEtiquette } from "@/lib/style";
 import type { MapBounds, TransmetteurPoint } from "./types";
 import { appliquerLibellesFr } from "./libelles-fr";
 import "./maplibre-worker-setup";
 
 // Free, no-API-key basemap (CARTO Positron), matching the site's light,
 // low-saturation look.
-const STYLE_URL = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+const STYLE_URL =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 // Spec: cluster once there are more than ~50 points on the map.
 const CLUSTER_THRESHOLD = 50;
@@ -18,75 +21,125 @@ const CLUSTER_THRESHOLD = 50;
 /**
  * Vignette affichée au clic sur un point : un aperçu cliquable qui mène à la
  * fiche. Construite en DOM natif (et non en JSX) car MapLibre gère lui-même
- * le contenu de ses bulles, hors de l'arbre React.
+ * le contenu de ses bulles, hors de l'arbre React — mais elle reprend, en
+ * petit, la vignette de la liste et l'en-tête de la fiche : domaine et
+ * savoir-faire en petites capitales, titre de la fiche, lieu.
  */
 function construireVignette(point: TransmetteurPoint) {
-  const lien = document.createElement("a");
-  lien.href = `/fiche/${point.slug}`;
-  Object.assign(lien.style, {
+  const el = (
+    balise: string,
+    style: Partial<CSSStyleDeclaration>,
+    texte?: string,
+  ) => {
+    const e = document.createElement(balise);
+    Object.assign(e.style, style);
+    if (texte !== undefined) e.textContent = texte;
+    return e;
+  };
+
+  const lien = el("a", {
     display: "block",
     textDecoration: "none",
-    color: "#2b2620",
+    color: "var(--foreground)",
     width: "240px",
-  });
+  }) as HTMLAnchorElement;
+  lien.href = `/fiche/${point.slug}`;
 
   if (point.photo) {
-    const img = document.createElement("img");
-    img.src = point.photo;
-    img.alt = point.nom;
-    Object.assign(img.style, {
+    const img = el("img", {
       display: "block",
       width: "100%",
       height: "120px",
       objectFit: "cover",
-    });
+    }) as HTMLImageElement;
+    img.src = point.photo;
+    img.alt = point.titre;
     lien.appendChild(img);
   }
 
-  const corps = document.createElement("div");
-  Object.assign(corps.style, { padding: "12px 14px 14px" });
-
-  const lieu = document.createElement("div");
-  lieu.textContent = point.lieuApproximatif;
-  Object.assign(lieu.style, {
-    fontSize: "11px",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "#8a8072",
-    marginBottom: "4px",
-  });
-
-  const nom = document.createElement("div");
-  nom.textContent = point.nom;
-  Object.assign(nom.style, {
-    fontFamily: "Georgia, 'Cormorant Garamond', serif",
-    fontSize: "18px",
-    fontWeight: "600",
-    lineHeight: "1.2",
-  });
-
-  const savoirFaire = document.createElement("div");
-  savoirFaire.textContent = point.savoirFaire;
-  Object.assign(savoirFaire.style, {
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#a3512a",
-    marginTop: "3px",
-  });
-
-  const cta = document.createElement("div");
-  cta.textContent = "Voir la fiche →";
-  Object.assign(cta.style, {
-    fontSize: "12.5px",
-    fontWeight: "600",
-    color: "#a3512a",
-    marginTop: "10px",
-  });
-
-  corps.append(lieu, nom, savoirFaire, cta);
+  const corps = el("div", { padding: "12px 14px 14px" });
+  corps.append(
+    el(
+      "div",
+      {
+        fontSize: "12px",
+        fontWeight: "500",
+        letterSpacing: "0.05em",
+        textTransform: "uppercase",
+        color: "var(--primary)",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      },
+      `${DOMAINE_LABELS[point.domaine]} · ${point.savoirFaire}`,
+    ),
+    el(
+      "div",
+      {
+        fontFamily: "var(--font-cormorant), Georgia, serif",
+        fontSize: "20px",
+        fontWeight: "600",
+        lineHeight: "1.2",
+        marginTop: "4px",
+      },
+      point.titre,
+    ),
+    el(
+      "div",
+      { fontSize: "13px", color: "var(--muted-foreground)", marginTop: "4px" },
+      point.titre !== point.nom
+        ? `${point.nom} · ${point.lieuCourt}`
+        : point.lieuCourt,
+    ),
+    formes(point.types),
+    el(
+      "div",
+      {
+        fontSize: "13px",
+        fontWeight: "600",
+        color: "var(--primary)",
+        marginTop: "10px",
+      },
+      "Voir la fiche →",
+    ),
+  );
   lien.appendChild(corps);
   return lien;
 }
+
+/**
+ * Les formes proposées, dans l'étiquette de tout le site : les deux
+ * premières, puis « +N ».
+ */
+function formes(types: string[]) {
+  const ligne = document.createElement("div");
+  Object.assign(ligne.style, {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    marginTop: types.length ? "10px" : "0",
+  });
+  // La bulle vit hors de React : elle ne peut pas employer EtiquetteForme,
+  // mais elle reprend exactement sa définition (lib/style).
+  const etiquette = (texte: string) => {
+    const e = document.createElement("span");
+    e.textContent = texte;
+    e.className = classeEtiquette;
+    return e;
+  };
+  types.slice(0, 2).forEach((t) => ligne.appendChild(etiquette(t)));
+  if (types.length > 2) {
+    const reste = etiquette(`+${types.length - 2}`);
+    reste.title = types.slice(2).join(", ");
+    ligne.appendChild(reste);
+  }
+  return ligne;
+}
+
+// Hors du composant : une fonction recréée à chaque rendu relancerait le
+// dessin de tous les points.
+const infobulleTransmetteur = (p: TransmetteurPoint) =>
+  `${p.titre} — ${p.savoirFaire} (${p.lieuApproximatif})`;
 
 export function FranceMap({
   points,
@@ -94,10 +147,19 @@ export function FranceMap({
   onHover,
   onBoundsChange,
   focus,
+  vignette = construireVignette,
+  infobulle = infobulleTransmetteur,
 }: {
   points: TransmetteurPoint[];
   activeId: string | null;
   onHover: (id: string | null) => void;
+  /**
+   * La bulle ouverte au clic sur un point. Par défaut, celle d'un
+   * transmetteur ; la page Stages y montre plutôt les stages du lieu.
+   */
+  vignette?: (point: TransmetteurPoint) => HTMLElement;
+  /** Le texte affiché au survol d'un point. */
+  infobulle?: (point: TransmetteurPoint) => string;
   /** Appelé au chargement puis à chaque déplacement/zoom de la carte. */
   onBoundsChange?: (bounds: MapBounds) => void;
   /** Recadre la carte sur une zone (ex. « autour de moi ») quand il change. */
@@ -114,6 +176,8 @@ export function FranceMap({
   const pointsRef = useRef(points);
   const activeIdRef = useRef(activeId);
   const onBoundsChangeRef = useRef(onBoundsChange);
+  const vignetteRef = useRef(vignette);
+  const infobulleRef = useRef(infobulle);
 
   const render = useCallback(() => {
     const map = mapRef.current;
@@ -154,21 +218,26 @@ export function FranceMap({
       // elle qui mène ensuite à la fiche.
       const el = document.createElement("button");
       el.type = "button";
-      el.title = `${point.nom} — ${point.savoirFaire} (${point.lieuApproximatif})`;
+      el.title = infobulleRef.current(point);
       stylerPoint(el, active);
       el.addEventListener("mouseenter", () => onHover(point.id));
       el.addEventListener("mouseleave", () => onHover(null));
       const vignette = new maplibregl.Popup({
         offset: 14,
-        maxWidth: "240px",
+        // Ne pas donner le focus à la bulle : sur un clic de souris, son
+        // premier lien s'entourait du cadre de focus, comme sélectionné. Au
+        // clavier, Tab y mène toujours.
+        focusAfterOpen: false,
+        // Chaque bulle fixe sa propre largeur.
+        maxWidth: "none",
         className: "vignette-transmetteur",
-      }).setDOMContent(construireVignette(point));
+      }).setDOMContent(vignetteRef.current(point));
       pointMarkersRef.current.set(
         point.id,
         new maplibregl.Marker({ element: el })
           .setLngLat([point.lng, point.lat])
           .setPopup(vignette)
-          .addTo(map)
+          .addTo(map),
       );
     };
 
@@ -181,7 +250,7 @@ export function FranceMap({
           type: "Feature",
           properties: { id: p.id },
           geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-        }))
+        })),
       );
 
       const bounds = map.getBounds();
@@ -215,18 +284,18 @@ export function FranceMap({
           el.onclick = () => {
             const expansionZoom = Math.min(
               16,
-              index.getClusterExpansionZoom(cluster.id as number)
+              index.getClusterExpansionZoom(cluster.id as number),
             );
             map.easeTo({ center: [lng, lat], zoom: expansionZoom });
           };
           clusterMarkersRef.current.push(
             new maplibregl.Marker({ element: el })
               .setLngLat([lng, lat])
-              .addTo(map)
+              .addTo(map),
           );
         } else {
           const point = currentPoints.find(
-            (p) => p.id === cluster.properties.id
+            (p) => p.id === cluster.properties.id,
           );
           if (point) addPointMarker(point);
         }
@@ -255,7 +324,7 @@ export function FranceMap({
     });
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
-      "top-right"
+      "top-right",
     );
     mapRef.current = map;
 
@@ -306,7 +375,7 @@ export function FranceMap({
         [focus.lng - dLng, focus.lat - dLat],
         [focus.lng + dLng, focus.lat + dLat],
       ],
-      { padding: 40, duration: 800 }
+      { padding: 40, duration: 800 },
     );
   }, [focus]);
 
@@ -314,8 +383,10 @@ export function FranceMap({
   useEffect(() => {
     pointsRef.current = points;
     activeIdRef.current = activeId;
+    vignetteRef.current = vignette;
+    infobulleRef.current = infobulle;
     if (mapRef.current?.isStyleLoaded()) render();
-  }, [points, activeId, render]);
+  }, [points, activeId, vignette, infobulle, render]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

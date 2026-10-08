@@ -3,8 +3,14 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { MapPinIcon } from "lucide-react";
+import {
+  DomaineSavoirFaire,
+  ListeFormes,
+} from "@/components/shared/Etiquettes";
 import { DOMAINE_LABELS, TYPES_TRANSMISSION } from "@/lib/constants";
 import type { Domaine } from "@/lib/db/schema";
+import { bouton, champ, intitule, surtitre, titre } from "@/lib/style";
 import { dansLeCadrage, type MapBounds, type TransmetteurPoint } from "./types";
 import { FranceMap } from "./FranceMap";
 import { useTransmetteurFilters } from "./useTransmetteurFilters";
@@ -48,13 +54,14 @@ export function MapExplorer({
   // qui est visible à l'écran, et se met à jour quand on déplace la carte.
   const [cadrage, setCadrage] = useState<MapBounds | null>(null);
   const visibles = useMemo(
-    () => (cadrage ? filtres.filter((t) => dansLeCadrage(t, cadrage)) : filtres),
-    [filtres, cadrage]
+    () =>
+      cadrage ? filtres.filter((t) => dansLeCadrage(t, cadrage)) : filtres,
+    [filtres, cadrage],
   );
   const horsCadre = filtres.length - visibles.length;
   const focus = useMemo(
     () => (position ? { ...position, rayonKm } : null),
-    [position, rayonKm]
+    [position, rayonKm],
   );
 
   return (
@@ -63,10 +70,8 @@ export function MapExplorer({
         {/* Filtres */}
         <div className="flex flex-col gap-6 border-b border-border bg-background p-7 lg:border-r lg:border-b-0">
           <div>
-            <div className="mb-2 text-xs tracking-wider text-primary uppercase">
-              La carte des transmetteurs
-            </div>
-            <h1 className="mb-2 font-serif text-3xl font-semibold leading-tight">
+            <div className={`mb-2 ${surtitre}`}>La carte des transmetteurs</div>
+            <h1 className={`mb-2 ${titre.outil}`}>
               Chaque point est quelqu&apos;un qui transmet
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -75,22 +80,20 @@ export function MapExplorer({
             </p>
           </div>
 
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-muted-foreground">Rechercher</span>
+          <label className="flex flex-col gap-2.5">
+            <span className={intitule}>Rechercher</span>
             <input
               type="text"
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
               placeholder="Un nom, un savoir-faire…"
-              className="rounded-sm border border-input bg-card px-3 py-2 text-sm"
+              className={champ}
             />
           </label>
 
           <div>
             <div className="mb-2.5 flex items-baseline justify-between">
-              <span className="text-xs tracking-wide text-muted-foreground uppercase">
-                Domaine
-              </span>
+              <span className={intitule}>Domaine</span>
               <button
                 type="button"
                 onClick={resetFiltres}
@@ -105,7 +108,8 @@ export function MapExplorer({
                   d === "toutes"
                     ? transmetteurs.length
                     : transmetteurs.filter((t) => t.domaine === d).length;
-                const label = d === "toutes" ? "Tous les domaines" : DOMAINE_LABELS[d];
+                const label =
+                  d === "toutes" ? "Tous les domaines" : DOMAINE_LABELS[d];
                 const on = domaine === d;
                 return (
                   <button
@@ -113,7 +117,9 @@ export function MapExplorer({
                     type="button"
                     onClick={() => setDomaine(d)}
                     className={`flex items-center justify-between rounded-sm px-2.5 py-2 text-left text-sm font-medium ${
-                      on ? "bg-accent text-primary" : "text-foreground/80"
+                      on
+                        ? "bg-accent text-primary"
+                        : "text-foreground/80 hover:bg-accent/50"
                     }`}
                   >
                     <span>{label}</span>
@@ -125,9 +131,7 @@ export function MapExplorer({
           </div>
 
           <div>
-            <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
-              Formes proposées
-            </div>
+            <div className={`mb-2.5 ${intitule}`}>Formes proposées</div>
             <div className="flex flex-wrap gap-1.5">
               {TYPES_TRANSMISSION.map((nom) => {
                 const on = types.includes(nom);
@@ -137,13 +141,13 @@ export function MapExplorer({
                     type="button"
                     onClick={() =>
                       setTypes((prev) =>
-                        on ? prev.filter((t) => t !== nom) : [...prev, nom]
+                        on ? prev.filter((t) => t !== nom) : [...prev, nom],
                       )
                     }
                     className={`rounded-sm border px-2.5 py-1.5 text-xs font-medium ${
                       on
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-input bg-card text-foreground/80"
+                        : "border-input bg-card text-foreground/80 hover:bg-accent"
                     }`}
                   >
                     {nom}
@@ -164,15 +168,13 @@ export function MapExplorer({
           </label>
 
           <div className="border-t border-border pt-5">
-            <div className="mb-2.5 text-xs tracking-wide text-muted-foreground uppercase">
-              Autour de moi
-            </div>
+            <div className={`mb-2.5 ${intitule}`}>Autour de moi</div>
             {position ? (
               <div className="flex flex-col gap-2">
                 <select
                   value={rayonKm}
                   onChange={(e) => setRayonKm(Number(e.target.value))}
-                  className="rounded-sm border border-input bg-card px-2.5 py-2 text-sm"
+                  className={champ}
                 >
                   {RAYONS_KM.map((r) => (
                     <option key={r} value={r}>
@@ -196,7 +198,7 @@ export function MapExplorer({
               <button
                 type="button"
                 onClick={onUseLocation}
-                className="rounded-sm border border-input bg-card px-3 py-2 text-xs font-medium"
+                className={bouton.secondaire}
               >
                 Utiliser ma position
               </button>
@@ -238,9 +240,10 @@ export function MapExplorer({
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-6 py-14 sm:px-12">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="font-serif text-3xl font-semibold">
-              <strong>{visibles.length}</strong> transmetteurs
-              <span className="ml-2 text-base font-normal text-muted-foreground">
+            {/* Même tournure que la liste de la page Stages. */}
+            <h2 className={titre.section}>
+              {visibles.length} transmetteur{visibles.length > 1 ? "s" : ""}
+              <span className="ml-2 font-sans text-sm font-normal text-muted-foreground">
                 dans la zone affichée
               </span>
             </h2>
@@ -262,7 +265,7 @@ export function MapExplorer({
                 <button
                   type="button"
                   onClick={resetFiltres}
-                  className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222]"
+                  className={bouton.primaire}
                 >
                   Effacer les filtres
                 </button>
@@ -276,17 +279,20 @@ export function MapExplorer({
                   href={`/fiche/${t.slug}`}
                   onMouseEnter={() => setActif(t.id)}
                   onMouseLeave={() => setActif(null)}
-                  className={`flex h-92 flex-col overflow-hidden rounded-sm border bg-card ${
+                  // Ce que la fiche affiche en tête, dans le même ordre : le
+                  // domaine et le savoir-faire, le titre, le lieu ; puis les
+                  // formes, dans les étiquettes de tout le site.
+                  className={`flex h-full flex-col overflow-hidden rounded-sm border bg-card text-foreground hover:text-foreground ${
                     actif === t.id ? "border-primary" : "border-border"
                   }`}
                 >
                   {/* Emplacement toujours présent, même sans photo, pour que
                       toutes les fiches gardent le même gabarit. */}
-                  <div className="relative h-52 w-full shrink-0 bg-secondary">
+                  <div className="relative h-48 w-full shrink-0 bg-secondary">
                     {t.photo && (
                       <Image
                         src={t.photo}
-                        alt={t.nom}
+                        alt={t.titre}
                         fill
                         sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                         className="object-cover"
@@ -294,40 +300,27 @@ export function MapExplorer({
                     )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-2 p-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="shrink-0 rounded-sm bg-accent px-2 py-1 text-[11px] tracking-wide text-primary uppercase">
-                      {DOMAINE_LABELS[t.domaine]}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {t.lieuApproximatif}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="line-clamp-1 font-serif text-xl font-semibold leading-tight">
-                      {t.nom}
+                    <DomaineSavoirFaire
+                      domaine={t.domaine}
+                      savoirFaire={t.savoirFaire}
+                      className="truncate"
+                    />
+                    <div className="line-clamp-1 font-serif text-xl leading-tight font-semibold">
+                      {t.titre}
                     </div>
-                    <div className="mt-1 line-clamp-1 text-sm font-medium text-primary">
-                      {t.savoirFaire}
+                    <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                      <MapPinIcon
+                        aria-hidden
+                        className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                      />
+                      <span className="line-clamp-2">
+                        {t.titre !== t.nom && `${t.nom} · `}
+                        {t.lieuCourt}
+                      </span>
                     </div>
-                  </div>
-                  <div className="mt-auto flex gap-1.5 overflow-hidden">
-                    {t.types.slice(0, 2).map((ty) => (
-                      <span
-                        key={ty}
-                        className="truncate rounded-sm border border-border bg-secondary px-2 py-1 text-xs whitespace-nowrap text-muted-foreground"
-                      >
-                        {ty}
-                      </span>
-                    ))}
-                    {t.types.length > 2 && (
-                      <span
-                        title={t.types.slice(2).join(", ")}
-                        className="shrink-0 rounded-sm border border-border bg-secondary px-2 py-1 text-xs whitespace-nowrap text-muted-foreground"
-                      >
-                        +{t.types.length - 2}
-                      </span>
-                    )}
-                  </div>
+                    <div className="mt-auto pt-2">
+                      <ListeFormes formes={t.types} />
+                    </div>
                   </div>
                 </Link>
               ))}

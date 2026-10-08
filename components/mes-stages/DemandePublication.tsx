@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { basculerEnLigne, demanderPublication } from "@/app/mes-stages/actions";
+import { bouton } from "@/lib/style";
 
 /**
  * Quatre situations : fiche en ligne, retirée du site, demande en attente, ou
@@ -81,11 +82,7 @@ export function DemandePublication({
             <button
               type="submit"
               disabled={basculeEnCours || (!publiee && manquants.length > 0)}
-              className={`rounded-sm px-5 py-2.5 text-sm font-medium disabled:opacity-50 ${
-                publiee
-                  ? "border border-input bg-card text-foreground/80 hover:bg-accent"
-                  : "bg-primary text-primary-foreground hover:bg-[#8a4222]"
-              }`}
+              className={publiee ? bouton.secondaire : bouton.primaire}
             >
               {basculeEnCours
                 ? "Un instant…"
@@ -105,7 +102,7 @@ export function DemandePublication({
                   ? `Fiche incomplète : il manque ${manquants.join(", ")}.`
                   : undefined
               }
-                className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-50"
+                className={bouton.primaire}
               >
                 {demandeEnCours ? "Envoi…" : "Demander la publication"}
               </button>

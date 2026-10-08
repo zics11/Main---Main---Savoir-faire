@@ -183,6 +183,13 @@
       "when": 1790331065067,
       "tag": "0025_faulty_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1790521199746,
+      "tag": "0026_funny_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { XIcon } from "lucide-react";
 import type { Stage, StageDate } from "@/lib/db/schema";
+import { boutonFermer } from "@/lib/style";
 import type { ContactState } from "@/app/fiche/[slug]/contact-actions";
 import { ContactForm } from "./ContactForm";
 
@@ -87,9 +89,9 @@ export function ContactProvider({
               type="button"
               onClick={() => setOuverture(null)}
               aria-label="Fermer"
-              className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-card text-lg hover:bg-accent"
+              className={`absolute top-3 right-3 z-10 ${boutonFermer}`}
             >
-              ×
+              <XIcon aria-hidden className="h-5 w-5" />
             </button>
             <ContactForm
               fiche={fiche}

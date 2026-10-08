@@ -9,6 +9,7 @@ import {
   type TotpState,
 } from "@/app/mon-compte/actions";
 import { ModaleConfirmation } from "@/components/ui/ModaleConfirmation";
+import { bouton } from "@/lib/style";
 
 type Enrolement = { secret: string; qr: string } | null;
 
@@ -70,7 +71,7 @@ export function DoubleAuthForm({ active }: { active: boolean }) {
       {etatArret && (
         <p
           role="status"
-          className={`mb-4 text-sm ${etatArret.ok ? "text-[#4f6b3a]" : "text-destructive"}`}
+          className={`mb-4 text-sm ${etatArret.ok ? "text-success-foreground" : "text-destructive"}`}
         >
           {etatArret.message}
         </p>
@@ -80,7 +81,7 @@ export function DoubleAuthForm({ active }: { active: boolean }) {
         <button
           type="button"
           onClick={() => setModaleArret(true)}
-          className="rounded-sm border border-primary px-4 py-2.5 text-sm font-medium text-primary hover:bg-accent"
+          className={bouton.contour}
         >
           Désactiver
         </button>
@@ -89,7 +90,7 @@ export function DoubleAuthForm({ active }: { active: boolean }) {
           type="button"
           onClick={commencer}
           disabled={enPreparation}
-          className="rounded-sm bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+          className={bouton.primaire}
         >
           {enPreparation ? "Un instant…" : "Activer"}
         </button>
@@ -140,14 +141,14 @@ export function DoubleAuthForm({ active }: { active: boolean }) {
               <button
                 type="submit"
                 disabled={activationEnCours}
-                className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+                className={bouton.primaire}
               >
                 {activationEnCours ? "Vérification…" : "Vérifier et activer"}
               </button>
               <button
                 type="button"
                 onClick={() => setEnrolement(null)}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={bouton.discret}
               >
                 Annuler
               </button>
@@ -193,14 +194,14 @@ export function DoubleAuthForm({ active }: { active: boolean }) {
               <button
                 type="submit"
                 disabled={arretEnCours}
-                className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+                className={bouton.primaire}
               >
                 {arretEnCours ? "Un instant…" : "Désactiver"}
               </button>
               <button
                 type="button"
                 onClick={() => setModaleArret(false)}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={bouton.discret}
               >
                 Annuler
               </button>

@@ -22,12 +22,16 @@ export function dansLeCadrage(
 export type TransmetteurPoint = {
   id: string;
   slug: string;
+  /** Le titre de la fiche — nom du lieu, à défaut celui du transmetteur. */
+  titre: string;
   nom: string;
   domaine: Domaine;
   savoirFaire: string;
   /** Première photo de la fiche, affichée en vignette dans les résumés. */
   photo: string | null;
   lieuApproximatif: string;
+  /** « Lagrasse (11220) » : pour les vignettes, où la place manque. */
+  lieuCourt: string;
   lat: number;
   lng: number;
   hebergement: boolean;

@@ -1,71 +1,53 @@
+import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { transmetteurs } from "@/lib/db/schema";
 import { HauteurEntete } from "./HauteurEntete";
-import { NavLink } from "./NavLink";
+import { NavigationSite } from "./NavigationSite";
 
 export async function Header() {
   const session = await auth();
+  const role = session?.user?.role;
+
+  // Chaque rôle a son espace ; le menu n'en montre qu'un.
+  const espace =
+    role === "admin"
+      ? { href: "/admin", label: "Administration" }
+      : role === "transmetteur"
+        ? { href: "/mes-stages", label: "Mon espace" }
+        : null;
+
+  // La fiche rattachée au compte donne le visage et le nom du menu. Un compte
+  // de l'association n'en a pas : ses initiales suffiront.
+  const fiche = session?.user?.id
+    ? await db.query.transmetteurs.findFirst({
+        where: eq(transmetteurs.userId, session.user.id),
+        columns: { nom: true, photoPortrait: true },
+      })
+    : null;
+
+  async function deconnexion() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
 
   return (
-    <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-background px-6 py-5 sm:px-12">
-      <Link href="/" className="flex items-baseline gap-2.5">
-        <span className="font-serif text-2xl font-bold tracking-tight">
-          Main à Main
-        </span>
-        <span className="hidden text-xs tracking-wider text-muted-foreground uppercase sm:inline">
-          savoir-faire manuels
-        </span>
+    <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-border bg-background px-6 py-4 sm:px-12 lg:px-8 xl:px-12">
+      <Link
+        href="/"
+        className="font-serif text-2xl font-bold tracking-tight whitespace-nowrap xl:text-3xl"
+      >
+        Main à Main
       </Link>
 
-      <nav className="flex flex-wrap items-center gap-x-7 gap-y-2 text-sm font-medium">
-        <NavLink href="/carte">La carte</NavLink>
-        <NavLink href="/stages">Les stages</NavLink>
-        <NavLink href="/#association">L&apos;association</NavLink>
-
-        <Link
-          href="/#transmettre"
-          className="rounded-sm border border-primary px-4 py-2 text-primary hover:bg-accent"
-        >
-          Proposer une transmission
-        </Link>
-
-        {!session?.user && (
-          <Link href="/connexion" className="text-muted-foreground hover:text-primary">
-            Connexion
-          </Link>
-        )}
-
-        {session?.user?.role === "admin" && (
-          <Link href="/admin" className="text-muted-foreground hover:text-primary">
-            Administration
-          </Link>
-        )}
-
-        {session?.user?.role === "transmetteur" && (
-          <Link href="/mes-stages" className="text-muted-foreground hover:text-primary">
-            Mon espace
-          </Link>
-        )}
-
-        {session?.user && (
-          <Link href="/mon-compte" className="text-muted-foreground hover:text-primary">
-            Mon compte
-          </Link>
-        )}
-
-        {session?.user && (
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button type="submit" className="text-muted-foreground hover:text-primary">
-              Se déconnecter
-            </button>
-          </form>
-        )}
-      </nav>
+      <NavigationSite
+        espace={espace}
+        email={session?.user?.email ?? null}
+        nom={fiche?.nom ?? null}
+        portrait={fiche?.photoPortrait ?? null}
+        deconnexion={deconnexion}
+      />
 
       <HauteurEntete />
     </header>

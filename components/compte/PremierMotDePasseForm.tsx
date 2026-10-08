@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Input } from "@/components/ui/input";
 import { definirPremierMotDePasse } from "@/app/bienvenue/[token]/actions";
 import { LONGUEUR_MIN_MOT_DE_PASSE } from "@/lib/constants";
+import { bouton } from "@/lib/style";
 
 export function PremierMotDePasseForm({ jeton }: { jeton: string }) {
   const [etat, definir, enCours] = useActionState(
@@ -42,7 +43,7 @@ export function PremierMotDePasseForm({ jeton }: { jeton: string }) {
       <button
         type="submit"
         disabled={enCours}
-        className="mt-2 rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+        className={`${bouton.primaire} mt-2`}
       >
         {enCours ? "Un instant…" : "Accéder à mon espace"}
       </button>

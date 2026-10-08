@@ -2,6 +2,7 @@ import { and, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { stageDates, transmetteurs } from "@/lib/db/schema";
 import type { TransmetteurPoint } from "@/components/map/types";
+import { libelleLieu, libelleLieuCourt } from "@/lib/lieu";
 
 // The set of "formes de transmission" a transmetteur offers isn't stored on
 // their profile — it's the union of the (free-text) `type` of each of their
@@ -33,11 +34,13 @@ export async function getPublishedTransmetteurs(): Promise<
   return rows.filter(estSituee).map((t) => ({
     id: t.id,
     slug: t.slug,
+    titre: t.nomLieu || t.nom,
     nom: t.nom,
     domaine: t.domaine,
     savoirFaire: t.savoirFaire ?? "",
     photo: t.photos[0] ?? null,
-    lieuApproximatif: t.lieuApproximatif ?? "",
+    lieuApproximatif: libelleLieu(t),
+    lieuCourt: libelleLieuCourt(t),
     lat: t.lat,
     lng: t.lng,
     hebergement: t.hebergement,
@@ -53,6 +56,8 @@ export type UpcomingStage = {
   titre: string;
   type: string | null;
   niveau: string | null;
+  /** Durée du stage, commune à toutes ses dates. */
+  duree: string | null;
   prix: string | null;
   description: string;
   /** Photo du stage, à défaut celle de la fiche. */
@@ -84,6 +89,9 @@ export async function getUpcomingStages(): Promise<UpcomingStage[]> {
   return rows.flatMap((d) => {
     const t = d.stage.transmetteur;
     if (!t.publiee || !estSituee(t)) return [];
+    // Une date complète n'a plus rien à proposer dans la liste ni sur la
+    // carte des stages ; la fiche, elle, continue de l'afficher « Complet ».
+    if (d.places !== null && d.inscrits >= d.places) return [];
     return [
       {
         id: d.id,
@@ -91,6 +99,7 @@ export async function getUpcomingStages(): Promise<UpcomingStage[]> {
         titre: d.stage.titre,
         type: d.stage.type,
         niveau: d.stage.niveau,
+        duree: d.stage.duree,
         prix: d.stage.prix,
         description: d.stage.description,
         photo: d.stage.photos[0] ?? t.photos[0] ?? null,
@@ -101,11 +110,13 @@ export async function getUpcomingStages(): Promise<UpcomingStage[]> {
         transmetteur: {
           id: t.id,
           slug: t.slug,
+          titre: t.nomLieu || t.nom,
           nom: t.nom,
           domaine: t.domaine,
           savoirFaire: t.savoirFaire ?? "",
           photo: t.photos[0] ?? null,
-          lieuApproximatif: t.lieuApproximatif ?? "",
+          lieuApproximatif: libelleLieu(t),
+    lieuCourt: libelleLieuCourt(t),
           lat: t.lat,
           lng: t.lng,
           hebergement: t.hebergement,

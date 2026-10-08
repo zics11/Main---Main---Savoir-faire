@@ -10,11 +10,12 @@ import {
   inviterTransmetteur,
   type InvitationState,
 } from "@/app/admin/actions";
+import { bouton, intitule } from "@/lib/style";
 
 function Info({ label, valeur }: { label: string; valeur: string }) {
   return (
     <div>
-      <dt className="text-xs tracking-wider text-muted-foreground uppercase">
+      <dt className={intitule}>
         {label}
       </dt>
       <dd className="mt-1 text-sm">{valeur}</dd>
@@ -59,13 +60,13 @@ export function CompteTransmetteur({
 
   return (
     <section className="rounded-sm border border-border bg-card p-6">
-      <h2 className="mb-4 font-serif text-lg font-semibold">
+      <h2 className="mb-4 font-serif text-xl font-semibold">
         Compte du transmetteur
       </h2>
 
       <dl className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <dt className="text-xs tracking-wider text-muted-foreground uppercase">
+          <dt className={intitule}>
             Identifiant
           </dt>
           <dd className="mt-1 flex flex-wrap items-center gap-3 text-sm">
@@ -131,11 +132,7 @@ export function CompteTransmetteur({
           <button
             type="submit"
             disabled={invitEnCours}
-            className={`rounded-sm px-4 py-2.5 text-sm font-medium disabled:opacity-60 ${
-              aUnMotDePasse
-                ? "border border-input bg-card text-foreground/80 hover:bg-accent"
-                : "bg-primary text-primary-foreground hover:bg-[#8a4222]"
-            }`}
+            className={aUnMotDePasse ? bouton.secondaire : bouton.primaire}
           >
             {invitEnCours ? "Envoi…" : "Renvoyer le mail d'inscription"}
           </button>
@@ -152,11 +149,7 @@ export function CompteTransmetteur({
                 ? undefined
                 : "Disponible une fois que le transmetteur aura choisi son mot de passe."
             }
-            className={`rounded-sm px-4 py-2.5 text-sm font-medium ${
-              aUnMotDePasse
-                ? "bg-primary text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
-                : "cursor-not-allowed border border-input bg-card text-foreground/80 opacity-45"
-            }`}
+            className={aUnMotDePasse ? bouton.primaire : bouton.secondaire}
           >
             {mdpEnCours ? "Envoi…" : "Envoyer un mail de récupération"}
           </button>
@@ -165,7 +158,7 @@ export function CompteTransmetteur({
         {message && (
           <p
             role="status"
-            className={`text-sm ${message.ok ? "text-[#4f6b3a]" : "text-destructive"}`}
+            className={`text-sm ${message.ok ? "text-success-foreground" : "text-destructive"}`}
           >
             {message.message}
           </p>
@@ -197,14 +190,14 @@ export function CompteTransmetteur({
               <button
                 type="submit"
                 disabled={emailEnCours}
-                className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+                className={bouton.primaire}
               >
                 {emailEnCours ? "Envoi…" : "Enregistrer l'adresse"}
               </button>
               <button
                 type="button"
                 onClick={() => setModaleEmail(false)}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={bouton.discret}
               >
                 Annuler
               </button>

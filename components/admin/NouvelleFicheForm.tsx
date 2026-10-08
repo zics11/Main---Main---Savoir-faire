@@ -5,6 +5,7 @@ import { createFiche } from "@/app/admin/actions";
 import { Input } from "@/components/ui/input";
 import { DOMAINE_LABELS } from "@/lib/constants";
 import { DOMAINES } from "@/lib/db/schema";
+import { bouton, champ } from "@/lib/style";
 
 // Création volontairement minimale : l'association ouvre la fiche avec le
 // strict nécessaire, et le transmetteur la complète lui-même depuis son
@@ -40,7 +41,7 @@ export function NouvelleFicheForm() {
           <select
             name="domaine"
             defaultValue={v?.domaine}
-            className="w-full rounded-sm border border-input bg-card px-3 py-2.5 text-sm"
+            className={champ}
           >
             {DOMAINES.map((d) => (
               <option key={d} value={d}>
@@ -59,7 +60,7 @@ export function NouvelleFicheForm() {
         <button
           type="submit"
           disabled={enCours}
-          className="mt-1 rounded-sm bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+          className={`${bouton.primaire} mt-1`}
         >
           {enCours ? "Création…" : "Créer la fiche et inviter"}
         </button>

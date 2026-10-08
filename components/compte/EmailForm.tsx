@@ -8,6 +8,7 @@ import {
   type CompteState,
 } from "@/app/mon-compte/actions";
 import { ModaleConfirmation } from "@/components/ui/ModaleConfirmation";
+import { bouton } from "@/lib/style";
 
 /**
  * Le titulaire change son adresse lui-même, avec trois garde-fous : son mot
@@ -63,7 +64,7 @@ export function EmailForm({
       <button
         type="button"
         onClick={() => setOuverte(true)}
-        className="rounded-sm border border-primary px-4 py-2.5 text-sm font-medium text-primary hover:bg-accent"
+        className={bouton.contour}
       >
         Changer mon adresse
       </button>
@@ -71,7 +72,7 @@ export function EmailForm({
       {message && !ouverte && (
         <p
           role="status"
-          className={`mt-3 text-sm ${message.ok ? "text-[#4f6b3a]" : "text-destructive"}`}
+          className={`mt-3 text-sm ${message.ok ? "text-success-foreground" : "text-destructive"}`}
         >
           {message.message}
         </p>
@@ -116,14 +117,14 @@ export function EmailForm({
               <button
                 type="submit"
                 disabled={enCours}
-                className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#8a4222] disabled:opacity-60"
+                className={bouton.primaire}
               >
                 {enCours ? "Envoi…" : "Envoyer le lien de confirmation"}
               </button>
               <button
                 type="button"
                 onClick={() => setOuverte(false)}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={bouton.discret}
               >
                 Annuler
               </button>
