@@ -75,6 +75,12 @@
   --admin: #43413c;
   --admin-fond: #eceae4;
   --admin-bord: #d6d2c8;
+  /* Les dons — le bouton « Soutenir Main à Main » et la page Soutenir : une
+     couleur à eux, pour ne pas se confondre avec les appels terre cuite du
+     site. */
+  --soutien: #3f5b3a;
+  --soutien-survol: #344b30;
+  --soutien-fond: #e9efe6;
   --border: #e8e2d6;
   --input: #d5cdbd;
   --ring: #a3512a;

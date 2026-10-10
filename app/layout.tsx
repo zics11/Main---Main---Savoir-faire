@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Work_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { SoutienFlottant } from "@/components/dons/SoutienFlottant";
+import { donsVisibles } from "@/lib/dons-serveur";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -29,6 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-screen">
         {children}
+        {/* L'invitation à donner, sur les pages publiques : elle se tait
+            d'elle-même ailleurs, et tant que les dons ne sont pas ouverts. */}
+        {donsVisibles() && <SoutienFlottant />}
         <Toaster />
       </body>
     </html>

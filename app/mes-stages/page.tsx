@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { FicheForm } from "@/components/admin/FicheForm";
 import { DemandePublication } from "@/components/mes-stages/DemandePublication";
+import { OngletTemoignages } from "@/components/mes-stages/OngletTemoignages";
 import { PanneauAccueil } from "@/components/mes-stages/PanneauAccueil";
 import { FicheTabs } from "@/components/shared/FicheTabs";
 import { EditeurStages } from "@/components/stages/EditeurStages";
@@ -12,9 +13,19 @@ import { db } from "@/lib/db";
 import { requireMyTransmetteur } from "@/lib/dal";
 import { champsManquants, champsManquantsDemande } from "@/lib/fiche";
 import { etatFicheTransmetteur } from "@/lib/etat-fiche";
-import { stages } from "@/lib/db/schema";
-import { deleteMyStage, enregistrerMonStage, updateMyFiche } from "./actions";
+import { stages, temoignages } from "@/lib/db/schema";
+import { demandesDeLaFiche } from "@/lib/demandes-temoignage";
+import {
+  deleteMyStage,
+  demanderTemoignage,
+  enregistrerMonStage,
+  updateMyFiche,
+} from "./actions";
 import { surtitre } from "@/lib/style";
+import { EncartSoutien } from "@/components/dons/EncartSoutien";
+import { CONTRIBUTION_TRANSMETTEUR, enEuros, MONTANTS_TRANSMETTEUR } from "@/lib/dons";
+import { encartsDons } from "@/lib/dons-serveur";
+import { demandesRecues } from "@/lib/demandes-contact";
 
 export default async function MonEspacePage({
   searchParams,
@@ -28,6 +39,15 @@ export default async function MonEspacePage({
       dates: { orderBy: (d, { asc }) => [asc(d.dateDebut)] },
     },
   });
+  const demandes = await demandesDeLaFiche(fiche.id);
+  // L'invitation à contribuer : une fois la fiche en ligne seulement, quand
+  // le site a commencé à servir — et pas juste après un don.
+  const soutien = fiche.publiee && (await encartsDons());
+  const recues = soutien ? await demandesRecues(fiche.id) : 0;
+  const mesTemoignages = await db.query.temoignages.findMany({
+    where: eq(temoignages.transmetteurId, fiche.id),
+    orderBy: [desc(temoignages.createdAt)],
+  });
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -39,8 +59,8 @@ export default async function MonEspacePage({
         </div>
         <h1 className="mb-2 font-serif text-3xl font-semibold">{fiche.nom}</h1>
         <p className="mb-8 text-sm text-muted-foreground">
-          Modifiez ici votre fiche et vos stages. Les témoignages sont ajoutés
-          par l&apos;association. Votre adresse email et votre mot de passe se
+          Modifiez ici votre fiche et vos stages, et demandez leur témoignage
+          aux personnes venues chez vous. Votre adresse email et votre mot de passe se
           changent depuis{" "}
           <Link href="/mon-compte" className="underline underline-offset-2">
             Mon compte
@@ -56,6 +76,26 @@ export default async function MonEspacePage({
             demandeEnvoyee={fiche.publicationDemandeeLe !== null}
             manquants={champsManquantsDemande(fiche)}
           />
+        )}
+
+        {soutien && (
+          <EncartSoutien
+            source="espace"
+            titre={
+              recues > 0
+                ? `${recues} demande${recues > 1 ? "s vous sont parvenues" : " vous est parvenue"} par Main à Main`
+                : "Main à Main vit de dons"
+            }
+            montants={MONTANTS_TRANSMETTEUR}
+            conseille={CONTRIBUTION_TRANSMETTEUR}
+            suffixe=" / an"
+            className="mb-8"
+          >
+            Sans aucune commission sur vos stages : le site ne vit que de
+            dons. S&apos;il vous amène des stagiaires, une contribution —
+            conseillée {enEuros(CONTRIBUTION_TRANSMETTEUR)} par an — l&apos;aide
+            à durer.
+          </EncartSoutien>
         )}
 
         <DemandePublication
@@ -76,6 +116,7 @@ export default async function MonEspacePage({
             publiee: fiche.publiee,
           }}
           nbStages={mesStages.length}
+          nbTemoignages={mesTemoignages.length}
           fiche={
             <FicheForm
               mode="edit"
@@ -112,6 +153,19 @@ export default async function MonEspacePage({
               stages={mesStages}
               enregistrer={enregistrerMonStage}
               supprimer={deleteMyStage}
+            />
+          }
+          temoignages={
+            <OngletTemoignages
+              stages={mesStages.map((s) => ({ id: s.id, titre: s.titre }))}
+              demandes={demandes}
+              temoignages={mesTemoignages.map((t) => ({
+                id: t.id,
+                texte: t.texte,
+                auteur: t.auteur,
+                contexte: t.contexte,
+              }))}
+              demander={demanderTemoignage}
             />
           }
         />

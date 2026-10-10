@@ -8,9 +8,13 @@ import {
 import { ContactTrigger } from "@/components/contact/ContactModal";
 import type { stageDates, stages } from "@/lib/db/schema";
 import { dureeDuStage } from "@/lib/format";
+import { lireDuree } from "@/lib/duree";
+import { lireProgramme, programmeVide, type Programme } from "@/lib/programme";
 import { EtiquetteForme } from "@/components/shared/Etiquettes";
 import { bouton, intitule } from "@/lib/style";
 import { Places, Repere, VignetteDate } from "./ReperesStage";
+import { FriseProgramme } from "./FriseProgramme";
+import { ProgrammeParJour } from "./ProgrammeParJour";
 import { StageCouverture } from "./StageCouverture";
 
 type Stage = typeof stages.$inferSelect & {
@@ -23,6 +27,7 @@ type Stage = typeof stages.$inferSelect & {
  * dates pour demander une place.
  */
 export function CarteStage({ stage: g }: { stage: Stage }) {
+  const programme = lireProgramme(g.programme);
   return (
     <article
       // Ancre visée depuis la page Stages, pour arriver directement sur le
@@ -69,27 +74,16 @@ export function CarteStage({ stage: g }: { stage: Stage }) {
         )}
       </div>
 
-      {g.programme.length > 0 && (
+      {!programmeVide(programme) && (
         <div className="border-t border-border px-6 py-5">
           <h4 className={`mb-4 font-sans ${intitule}`}>
-            {intituleProgramme(g.duree)}
+            {intituleProgramme(g.duree, programme)}
           </h4>
-          {/* Une frise : un point par moment de la journée, reliés par un
-              fil — on lit le déroulé de haut en bas. */}
-          <ol className="ml-1 border-l border-primary/25">
-            {g.programme.map((p, i) => (
-              <li key={i} className="relative pb-3.5 pl-5 last:pb-0">
-                <span
-                  aria-hidden
-                  className="absolute top-[7px] -left-[4.5px] h-2 w-2 bg-primary ring-4 ring-card"
-                />
-                <span className="mr-2.5 inline-block w-10 text-xs font-semibold text-primary tabular-nums">
-                  {p.heure}
-                </span>
-                <span className="text-sm text-foreground/90">{p.titre}</span>
-              </li>
-            ))}
-          </ol>
+          {programme.type === "journee" ? (
+            <FriseProgramme moments={programme.moments} />
+          ) : (
+            <ProgrammeParJour jours={programme.jours} />
+          )}
         </div>
       )}
 
@@ -175,11 +169,15 @@ function LigneDate({
 }
 
 /**
- * Le programme décrit une journée. Pour un stage d'un jour, c'est la
- * journée ; au-delà (« 2 jours », « 1 semaine »), c'est une journée type.
+ * Le titre du programme. Jour par jour, il le dit ; sinon, le programme
+ * décrit une journée : celle du stage, ou une journée type s'il en compte
+ * plusieurs. Pour quelques heures, c'est simplement le programme.
  */
-function intituleProgramme(duree: string | null) {
-  return duree && /jours|semaine|mois/i.test(duree)
+function intituleProgramme(duree: string | null, programme: Programme) {
+  if (programme.type === "par-jour") return "Le programme, jour par jour";
+  const d = lireDuree(duree);
+  if (d?.unite === "heure") return "Le programme";
+  return d && (d.unite === "semaine" || d.nombre > 1)
     ? "Une journée type"
     : "Le programme de la journée";
 }

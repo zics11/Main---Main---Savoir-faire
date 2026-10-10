@@ -11,7 +11,8 @@ import { FournisseurModifications } from "./ModificationsEnCours";
 type OngletId = "fiche" | "stages" | "temoignages" | "administration";
 
 // Onglets d'édition d'une fiche, dans l'admin comme dans l'espace
-// transmetteur (sans témoignages : ils restent gérés par l'association).
+// transmetteur. Les témoignages : modérés par l'association dans l'admin,
+// demandés par le transmetteur dans son espace.
 // Les panneaux restent montés (simplement masqués) : passer d'un onglet à
 // l'autre ne doit pas faire perdre ce qui a été saisi dans un autre.
 export function FicheTabs({

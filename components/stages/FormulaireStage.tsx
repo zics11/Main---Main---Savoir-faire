@@ -5,7 +5,6 @@ import {
   ArchiveIcon,
   CalendarDaysIcon,
   ChevronDownIcon,
-  PlusIcon,
   Trash2Icon,
   XIcon,
 } from "lucide-react";
@@ -22,7 +21,8 @@ import {
   type UniteDuree,
 } from "@/lib/duree";
 import type { Stage, StageDate } from "@/lib/db/schema";
-import type { DateSaisie, EtatStage, MomentSaisi } from "@/lib/stage";
+import type { DateSaisie, EtatStage } from "@/lib/stage";
+import { joursProgrammables } from "@/lib/programme";
 import {
   depuisChemins,
   GaleriePhotos,
@@ -30,6 +30,13 @@ import {
   type PhotoGalerie,
 } from "@/components/shared/GaleriePhotos";
 import { bouton, cadreChamp, champ } from "@/lib/style";
+import { BoutonAjout } from "./BoutonAjout";
+import {
+  brouillonProgramme,
+  EditeurProgramme,
+  programmeSaisi,
+  type BrouillonProgramme,
+} from "./ProgrammeStage";
 
 export type StageAvecDates = Stage & { dates: StageDate[] };
 
@@ -48,7 +55,6 @@ type LigneDate = {
   inscrits: string;
   publiee: boolean;
 };
-type LigneMoment = { cle: string; heure: string; titre: string };
 
 type Brouillon = {
   titre: string;
@@ -60,7 +66,7 @@ type Brouillon = {
   description: string;
   note: string;
   dates: LigneDate[];
-  programme: LigneMoment[];
+  programme: BrouillonProgramme;
   /** Dans l'ordre : la première est la photo d'accueil. */
   photos: PhotoGalerie[];
 };
@@ -81,10 +87,6 @@ function dateVide(): LigneDate {
   };
 }
 
-function momentVide(): LigneMoment {
-  return { cle: nouvelleCle(), heure: "", titre: "" };
-}
-
 function depuisStage(stage: StageAvecDates | null): Brouillon {
   if (!stage) {
     // Un stage neuf s'ouvre avec une date et un moment à remplir : on voit
@@ -99,7 +101,7 @@ function depuisStage(stage: StageAvecDates | null): Brouillon {
       description: "",
       note: "",
       dates: [dateVide()],
-      programme: [momentVide()],
+      programme: brouillonProgramme(null),
       photos: [],
     };
   }
@@ -126,11 +128,7 @@ function depuisStage(stage: StageAvecDates | null): Brouillon {
         publiee: d.publiee,
       })),
     photos: depuisChemins(stage.photos),
-    programme: stage.programme.map((m, i) => ({
-      cle: `moment-${i}`,
-      heure: m.heure,
-      titre: m.titre,
-    })),
+    programme: brouillonProgramme(stage.programme),
   };
 }
 
@@ -151,10 +149,12 @@ function versDates(lignes: LigneDate[]): DateSaisie[] {
   }));
 }
 
-function versProgramme(lignes: LigneMoment[]): MomentSaisi[] {
-  return lignes
-    .map((m) => ({ heure: m.heure.trim(), titre: m.titre.trim() }))
-    .filter((m) => m.titre !== "" || m.heure !== "");
+/** La durée telle qu'elle s'enregistre : « 3 jours ». */
+function dureeDe(b: Brouillon) {
+  return ecrireDuree({
+    nombre: Math.max(1, Number(b.dureeNombre) || 1),
+    unite: b.dureeUnite,
+  });
 }
 
 /** Ce qui compte pour savoir si quelque chose a changé — sans les clés d'édition. */
@@ -162,7 +162,7 @@ function empreinte(b: Brouillon) {
   return JSON.stringify({
     ...b,
     dates: versDates(b.dates),
-    programme: versProgramme(b.programme),
+    programme: programmeSaisi(b.programme, dureeDe(b)),
     photos: b.photos.map(referencePhoto),
   });
 }
@@ -232,14 +232,6 @@ export function FormulaireStage({
       dates: b.dates.map((d) => (d.cle === cle ? { ...d, ...modif } : d)),
     }));
 
-  const changerMoment = (cle: string, modif: Partial<LigneMoment>) =>
-    setBrouillon((b) => ({
-      ...b,
-      programme: b.programme.map((m) =>
-        m.cle === cle ? { ...m, ...modif } : m,
-      ),
-    }));
-
   function envoyer(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const donnees = new FormData(e.currentTarget);
@@ -267,10 +259,7 @@ export function FormulaireStage({
   // La fin de chaque date découle de la durée saisie plus haut. Une date
   // passée est archivée : rangée à part, toujours enregistrée, mais elle
   // n'encombre plus la liste.
-  const dureeTexte = ecrireDuree({
-    nombre: Math.max(1, Number(brouillon.dureeNombre) || 1),
-    unite: brouillon.dureeUnite,
-  });
+  const dureeTexte = dureeDe(brouillon);
   const aujourdhui = jourIso(new Date(maintenant));
   const finDe = (d: LigneDate) =>
     d.dateDebut ? jourIso(finDuStage(new Date(d.dateDebut), dureeTexte)) : "";
@@ -362,7 +351,7 @@ export function FormulaireStage({
       <input
         type="hidden"
         name="programme"
-        value={JSON.stringify(versProgramme(brouillon.programme))}
+        value={JSON.stringify(programmeSaisi(brouillon.programme, dureeTexte))}
       />
 
       <div className="flex items-center justify-between gap-4 border-b border-border bg-secondary px-6 py-4">
@@ -428,30 +417,45 @@ export function FormulaireStage({
             <span id="libelle-duree" className={libelle}>
               Durée
             </span>
-            {/* Un nombre et une unité : la durée donne la fin de chaque date,
-                qu'on n'a donc pas à saisir. */}
+            {/* Un nombre et une unité, choisis dans des listes : quelques
+                heures, des jours, des semaines. La durée donne la fin de
+                chaque date, qu'on n'a donc pas à saisir. */}
             <div
               className="flex gap-2"
               role="group"
               aria-labelledby="libelle-duree"
             >
-              <input
-                type="number"
+              <select
                 name="dureeNombre"
-                min={1}
-                max={DUREE_MAX[brouillon.dureeUnite]}
-                inputMode="numeric"
                 value={brouillon.dureeNombre}
                 onChange={(e) => changer("dureeNombre", e.target.value)}
                 aria-label="Nombre"
                 className={`${cadreChamp} w-20 shrink-0`}
-              />
+              >
+                {Array.from(
+                  { length: DUREE_MAX[brouillon.dureeUnite] },
+                  (_, i) => String(i + 1),
+                ).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
               <select
                 name="dureeUnite"
                 value={brouillon.dureeUnite}
-                onChange={(e) =>
-                  changer("dureeUnite", e.target.value as UniteDuree)
-                }
+                onChange={(e) => {
+                  const unite = e.target.value as UniteDuree;
+                  // Un nombre trop grand pour la nouvelle unité se ramène
+                  // au plus grand possible.
+                  setBrouillon((b) => ({
+                    ...b,
+                    dureeUnite: unite,
+                    dureeNombre: String(
+                      Math.min(Number(b.dureeNombre) || 1, DUREE_MAX[unite]),
+                    ),
+                  }));
+                }}
                 aria-label="Unité"
                 className={champ}
               >
@@ -488,54 +492,20 @@ export function FormulaireStage({
       </Section>
 
       <Section
-        titre="Le programme d'une journée"
-        aide="Facultatif. Un moment par ligne, dans l'ordre de la journée."
+        titre={
+          brouillon.dureeUnite === "heure"
+            ? "Le programme"
+            : joursProgrammables(dureeTexte) > 0
+              ? "Le programme des journées"
+              : "Le programme de la journée"
+        }
+        aide="Facultatif. Choisissez l'heure de chaque moment : ils se rangent d'eux-mêmes dans l'ordre à l'enregistrement."
       >
-        <ul className="flex flex-col gap-2">
-          {brouillon.programme.map((m) => (
-            <li key={m.cle} className="flex items-center gap-2">
-              <input
-                value={m.heure}
-                onChange={(e) =>
-                  changerMoment(m.cle, { heure: e.target.value })
-                }
-                placeholder="9 h"
-                aria-label="Heure"
-                className={`${cadreChamp} w-20 shrink-0 sm:w-24`}
-              />
-              <input
-                value={m.titre}
-                onChange={(e) =>
-                  changerMoment(m.cle, { titre: e.target.value })
-                }
-                placeholder="ex : Pétrissage à la main"
-                aria-label="Ce qu'on fait"
-                className={`${champ} min-w-0 flex-1`}
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  changer(
-                    "programme",
-                    brouillon.programme.filter((x) => x.cle !== m.cle),
-                  )
-                }
-                aria-label="Retirer ce moment"
-                title="Retirer ce moment"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-destructive"
-              >
-                <XIcon aria-hidden className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
-        <BoutonAjout
-          onClick={() =>
-            changer("programme", [...brouillon.programme, momentVide()])
-          }
-        >
-          Ajouter un moment
-        </BoutonAjout>
+        <EditeurProgramme
+          valeur={brouillon.programme}
+          onChange={(programme) => changer("programme", programme)}
+          duree={dureeTexte}
+        />
       </Section>
 
       <Section
@@ -665,11 +635,7 @@ export function FormulaireStage({
             >
               Continuer la modification
             </button>
-            <button
-              type="button"
-              onClick={onFermer}
-              className={bouton.danger}
-            >
+            <button type="button" onClick={onFermer} className={bouton.danger}>
               Abandonner
             </button>
           </div>
@@ -746,24 +712,5 @@ function Section({
       )}
       <div className="mt-4">{children}</div>
     </section>
-  );
-}
-
-function BoutonAjout({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mt-3 flex items-center gap-1.5 rounded-sm border border-dashed border-primary/50 px-3.5 py-2 text-sm font-medium text-primary hover:bg-accent"
-    >
-      <PlusIcon aria-hidden className="h-4 w-4" />
-      {children}
-    </button>
   );
 }

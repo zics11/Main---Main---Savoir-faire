@@ -11,6 +11,7 @@ import {
   type UniteDuree,
 } from "@/lib/duree";
 import { optionalStr, str } from "@/lib/fiche";
+import { accorderProgramme, lireProgramme } from "@/lib/programme";
 import { ordonnerPhotos } from "@/lib/ordre-photos";
 import {
   deleteUploadedPhoto,
@@ -41,9 +42,6 @@ export type DateSaisie = {
   inscrits: number;
   publiee: boolean;
 };
-
-/** Un moment du programme (champ caché « programme », en JSON). */
-export type MomentSaisi = { heure: string; titre: string };
 
 const jourMois = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
@@ -107,19 +105,19 @@ function lireDates(formData: FormData, duree: string) {
   });
 }
 
-function lireProgramme(formData: FormData) {
-  return (
-    json(formData, "programme")
-      .map((brut) => {
-        const m = (brut ?? {}) as Partial<MomentSaisi>;
-        return {
-          heure: String(m.heure ?? "").trim(),
-          titre: String(m.titre ?? "").trim(),
-        };
-      })
-      // Une ligne laissée vide en route n'a rien à faire en ligne.
-      .filter((m) => m.titre !== "")
-  );
+/**
+ * Le programme (champ caché « programme », en JSON), accordé à la durée :
+ * les lignes laissées vides tombent, les moments se rangent dans l'ordre des
+ * heures, un programme par jour garde les jours du stage.
+ */
+function lireProgrammeSaisi(formData: FormData, duree: string) {
+  let brut: unknown;
+  try {
+    brut = JSON.parse(str(formData, "programme") || "null");
+  } catch {
+    throw new ErreurStage("Le formulaire est mal formé : rechargez la page.");
+  }
+  return accorderProgramme(lireProgramme(brut), duree);
 }
 
 /** La durée, saisie en deux champs : un nombre et une unité. */
@@ -140,15 +138,16 @@ function lireDureeSaisie(formData: FormData) {
 function lireChamps(formData: FormData) {
   const titre = str(formData, "titre");
   if (!titre) throw new ErreurStage("Donnez un intitulé au stage.");
+  const duree = lireDureeSaisie(formData);
   return {
     titre,
     type: optionalStr(formData, "type"),
     niveau: optionalStr(formData, "niveau"),
-    duree: lireDureeSaisie(formData),
+    duree,
     prix: optionalStr(formData, "prix"),
     description: str(formData, "description"),
     note: optionalStr(formData, "note"),
-    programme: lireProgramme(formData),
+    programme: lireProgrammeSaisi(formData, duree),
   };
 }
 

@@ -6,6 +6,7 @@ import type { ContactState } from "@/app/fiche/[slug]/contact-actions";
 import { formatDebutEtDuree } from "@/lib/format";
 import { bouton, champ, intitule, surtitre } from "@/lib/style";
 import { EtiquetteForme } from "@/components/shared/Etiquettes";
+import { EncartSoutien } from "@/components/dons/EncartSoutien";
 
 // Le niveau de l'apprenant (qui écrit) — distinct du niveau du stage choisi.
 const NIVEAUX_APPRENANT = [
@@ -26,6 +27,7 @@ export function ContactForm({
   initialStageId,
   initialDateId,
   action,
+  soutien = false,
   onClose,
 }: {
   fiche: {
@@ -39,6 +41,8 @@ export function ContactForm({
   initialStageId?: string;
   initialDateId?: string;
   action: (prevState: ContactState, formData: FormData) => Promise<ContactState>;
+  /** Après l'envoi, l'invitation à soutenir le site. */
+  soutien?: boolean;
   onClose?: () => void;
 }) {
   const [state, formAction, pending] = useActionState<ContactState, FormData>(
@@ -85,10 +89,23 @@ export function ContactForm({
           Vous recevrez sa réponse par courriel. Rien n&apos;est réservé pour
           l&apos;instant : c&apos;est votre échange qui décidera de la suite.
         </p>
+        {/* Le moment où l'on mesure ce que le site apporte : l'invitation
+            à le soutenir vient ici, sous la confirmation, sans la gêner. */}
+        {soutien && (
+          <EncartSoutien
+            source="demande"
+            titre="Un coup de pouce, à prix libre ?"
+            className="mb-7"
+          >
+            Main à Main ne prend aucune commission, ni sur votre stage ni chez{" "}
+            {fiche.prenom}. Le site vit de dons : quelques euros suffisent à
+            faire tenir la prochaine rencontre.
+          </EncartSoutien>
+        )}
         <button
           type="button"
           onClick={onClose}
-          className={bouton.primaire}
+          className={soutien ? bouton.secondaire : bouton.primaire}
         >
           Fermer
         </button>

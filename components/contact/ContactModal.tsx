@@ -39,6 +39,7 @@ export function ContactProvider({
   fiche,
   offres,
   action,
+  soutien = false,
   children,
 }: {
   fiche: {
@@ -50,6 +51,8 @@ export function ContactProvider({
   };
   offres: (Stage & { dates: StageDate[] })[];
   action: (prevState: ContactState, formData: FormData) => Promise<ContactState>;
+  /** Après l'envoi, l'invitation à soutenir le site. */
+  soutien?: boolean;
   children: React.ReactNode;
 }) {
   const [ouverture, setOuverture] = useState<Ouverture>(null);
@@ -99,6 +102,7 @@ export function ContactProvider({
               initialStageId={ouverture.stageId}
               initialDateId={ouverture.dateId}
               action={action}
+              soutien={soutien}
               onClose={() => setOuverture(null)}
             />
           </div>

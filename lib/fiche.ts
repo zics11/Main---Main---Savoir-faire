@@ -9,6 +9,12 @@ import {
   inviteEmailText,
 } from "@/lib/email";
 import { sendMail } from "@/lib/mailer";
+import {
+  CONTRIBUTION_TRANSMETTEUR,
+  enEuros,
+  MONTANTS_TRANSMETTEUR,
+} from "@/lib/dons";
+import { encartEmail } from "@/lib/dons-serveur";
 import { creerJetonActivation, lienActivation } from "@/lib/activation";
 import { PHOTOS_MINIMUM } from "@/lib/fiche-constantes";
 import { codePostalValide } from "@/lib/lieu";
@@ -278,12 +284,20 @@ export async function prevenirMiseEnLigne(fiche: {
     `/fiche/${fiche.slug}`,
     process.env.AUTH_URL ?? "http://localhost:3000"
   ).toString();
+  // L'encart de l'espace transmetteur : sa contribution, par an.
+  const soutien = encartEmail("email-transmetteur", {
+    titre: "Main à Main vit de dons",
+    texte: `Votre fiche est en ligne, sans aucune commission sur vos stages : le site ne vit que de dons. S'il vous amène des stagiaires, une contribution — conseillée ${enEuros(CONTRIBUTION_TRANSMETTEUR)} par an — l'aide à durer.`,
+    montants: MONTANTS_TRANSMETTEUR,
+    conseille: CONTRIBUTION_TRANSMETTEUR,
+    suffixe: " / an",
+  });
   try {
     await sendMail({
       to: fiche.email,
       subject: "Votre fiche est en ligne — Main à Main",
-      html: ficheEnLigneHtml(fiche.nom, url),
-      text: ficheEnLigneText(fiche.nom, url),
+      html: ficheEnLigneHtml(fiche.nom, url, soutien),
+      text: ficheEnLigneText(fiche.nom, url, soutien),
     });
   } catch (err) {
     console.error(`Publication email to ${fiche.email} failed to send:`, err);

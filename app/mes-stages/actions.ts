@@ -24,6 +24,10 @@ import {
 import { sendMail } from "@/lib/mailer";
 import { deleteUploadedPhoto } from "@/lib/upload";
 import { enregistrerStage, ErreurStage, type EtatStage } from "@/lib/stage";
+import {
+  demanderDepuisFormulaire,
+  type EtatDemandeTemoignage,
+} from "@/lib/demandes-temoignage";
 
 // Every mutation below re-derives the caller's own fiche from their session
 // (requireMyTransmetteur) — a transmetteur can never act on a stage or date
@@ -208,4 +212,18 @@ export async function deleteMyStage(stageId: string) {
   await Promise.all(stage.photos.map((p) => deleteUploadedPhoto(p)));
   await db.delete(stages).where(eq(stages.id, stageId));
   revalidatePath("/mes-stages");
+}
+
+// ─── Demandes de témoignage ───
+// Le transmetteur donne le nom et l'adresse d'une personne venue en stage ;
+// le site lui écrit. Une seule demande par adresse (lib/demandes-temoignage).
+
+export async function demanderTemoignage(
+  _precedent: EtatDemandeTemoignage,
+  formData: FormData
+): Promise<EtatDemandeTemoignage> {
+  const fiche = await requireMyTransmetteur();
+  const etat = await demanderDepuisFormulaire(fiche, formData);
+  if (etat?.ok) revalidatePath("/mes-stages");
+  return etat;
 }

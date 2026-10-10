@@ -5,7 +5,10 @@ import {
   real,
   sqliteTable,
   text,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import type { ProgrammeStocke } from "@/lib/programme";
+
 // ─── Enums (application-level, enforced via TS + SQLite CHECK through `enum`) ───
 
 export const ROLES = ["admin", "transmetteur"] as const;
@@ -181,11 +184,13 @@ export const stages = sqliteTable(
     duree: text("duree"),
     prix: text("prix"),
     description: text("description").notNull().default(""),
-    // Same-day schedule, e.g. [{heure: "7 h", titre: "Rafraîchi du levain"}].
+    // Le déroulé : une journée, ou un programme par jour (voir
+    // lib/programme.ts). Les stages d'avant gardent l'ancien tableau d'une
+    // journée ; on les relit toujours avec `lireProgramme`.
     programme: text("programme", { mode: "json" })
-      .$type<{ heure: string; titre: string }[]>()
+      .$type<ProgrammeStocke>()
       .notNull()
-      .$defaultFn(() => []),
+      .$defaultFn(() => ({ type: "journee", moments: [] })),
     note: text("note"),
     // Relative paths under /uploads — photos spécifiques à ce stage (le
     // fournil pendant le stage, les pièces réalisées…), distinctes de la
@@ -256,6 +261,81 @@ export const temoignages = sqliteTable(
   (t) => [index("temoignages_transmetteur_idx").on(t.transmetteurId)]
 );
 
+// Une demande de contact passée par le site : de quoi dire au transmetteur
+// combien de demandes lui sont parvenues, et limiter les confirmations
+// envoyées à une même adresse. Rien de lisible sur l'apprenant : son adresse
+// n'est gardée qu'en empreinte, le message n'est pas conservé.
+export const demandesContact = sqliteTable(
+  "demandes_contact",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    transmetteurId: text("transmetteur_id")
+      .notNull()
+      .references(() => transmetteurs.id, { onDelete: "cascade" }),
+    stageId: text("stage_id").references(() => stages.id, {
+      onDelete: "set null",
+    }),
+    /** HMAC de l'adresse de l'apprenant (voir lib/demandes-contact.ts). */
+    emailEmpreinte: text("email_empreinte").notNull(),
+    /** La confirmation lui a été envoyée. */
+    confirmee: integer("confirmee", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [
+    index("demandes_contact_transmetteur_idx").on(t.transmetteurId),
+    index("demandes_contact_email_idx").on(t.emailEmpreinte, t.createdAt),
+  ]
+);
+
+// Une demande de témoignage envoyée par un transmetteur à quelqu'un venu en
+// stage. La personne reçoit un lien à usage unique : elle laisse un mot, ou
+// décline. Une seule demande par adresse et par fiche — l'index unique
+// l'impose, même si deux envois partent en même temps.
+export const demandesTemoignage = sqliteTable(
+  "demandes_temoignage",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    transmetteurId: text("transmetteur_id")
+      .notNull()
+      .references(() => transmetteurs.id, { onDelete: "cascade" }),
+    // Le stage concerné, s'il a été précisé ; la demande survit à sa
+    // suppression.
+    stageId: text("stage_id").references(() => stages.id, {
+      onDelete: "set null",
+    }),
+    nom: text("nom").notNull(),
+    /** En minuscules : « Camille@… » et « camille@… » sont la même personne. */
+    email: text("email").notNull(),
+    /** Empreinte du lien envoyé : une copie de la base n'ouvre aucun formulaire. */
+    jeton: text("jeton").notNull(),
+    expireLe: integer("expire_le", { mode: "timestamp_ms" }).notNull(),
+    envoyeeLe: integer("envoyee_le", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    /** « temoignage » ou « refus » ; null tant que la personne n'a pas répondu. */
+    reponse: text("reponse", { enum: ["temoignage", "refus"] }),
+    reponduLe: integer("repondu_le", { mode: "timestamp_ms" }),
+    temoignageId: text("temoignage_id").references(() => temoignages.id, {
+      onDelete: "set null",
+    }),
+  },
+  (t) => [
+    uniqueIndex("demandes_temoignage_fiche_email_idx").on(
+      t.transmetteurId,
+      t.email
+    ),
+    uniqueIndex("demandes_temoignage_jeton_idx").on(t.jeton),
+  ]
+);
+
 // ─── Relations (enables db.query.* with `with: {...}`) ───
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -274,6 +354,7 @@ export const transmetteursRelations = relations(
     }),
     stages: many(stages),
     temoignages: many(temoignages),
+    demandesTemoignage: many(demandesTemoignage),
   })
 );
 
@@ -299,6 +380,20 @@ export const temoignagesRelations = relations(temoignages, ({ one }) => ({
   }),
 }));
 
+export const demandesTemoignageRelations = relations(
+  demandesTemoignage,
+  ({ one }) => ({
+    transmetteur: one(transmetteurs, {
+      fields: [demandesTemoignage.transmetteurId],
+      references: [transmetteurs.id],
+    }),
+    stage: one(stages, {
+      fields: [demandesTemoignage.stageId],
+      references: [stages.id],
+    }),
+  })
+);
+
 // ─── Convenience types ───
 
 export type User = typeof users.$inferSelect;
@@ -310,3 +405,4 @@ export type StageDate = typeof stageDates.$inferSelect;
 export type NewStageDate = typeof stageDates.$inferInsert;
 export type Temoignage = typeof temoignages.$inferSelect;
 export type NewTemoignage = typeof temoignages.$inferInsert;
+export type DemandeTemoignage = typeof demandesTemoignage.$inferSelect;

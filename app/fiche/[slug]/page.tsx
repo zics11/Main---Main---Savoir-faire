@@ -24,6 +24,7 @@ import {
   titre as titreStyle,
 } from "@/lib/style";
 import { DomaineSavoirFaire } from "@/components/shared/Etiquettes";
+import { encartsDons } from "@/lib/dons-serveur";
 
 export default async function FichePage({
   params,
@@ -116,6 +117,7 @@ export default async function FichePage({
         }}
         offres={offres}
         action={sendContactRequest.bind(null, fiche.id)}
+        soutien={await encartsDons()}
       >
       <main className="flex-1">
         <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-6 px-6 pt-8 pb-8 sm:px-12">

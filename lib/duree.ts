@@ -7,10 +7,13 @@ export type UniteDuree = (typeof UNITES_DUREE)[number];
 
 export type Duree = { nombre: number; unite: UniteDuree };
 
-/** Plus que ça n'a plus rien d'un stage : on s'arrête là. */
+/**
+ * Ce que chaque unité propose : des heures pour moins d'une journée, des
+ * jours jusqu'à un mois, des semaines au-delà.
+ */
 export const DUREE_MAX: Record<UniteDuree, number> = {
-  heure: 24,
-  jour: 60,
+  heure: 12,
+  jour: 30,
   semaine: 12,
 };
 

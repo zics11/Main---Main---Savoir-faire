@@ -5,6 +5,11 @@ import { BlocageFiche } from "@/components/admin/BlocageFiche";
 import { ZoneDangereuse } from "@/components/admin/ZoneDangereuse";
 import { FicheForm } from "@/components/admin/FicheForm";
 import { TemoignagesManager } from "@/components/admin/TemoignagesManager";
+import {
+  DemanderTemoignage,
+  ListeDemandes,
+} from "@/components/temoignage/DemandesTemoignage";
+import { demandesDeLaFiche } from "@/lib/demandes-temoignage";
 import { FicheTabs } from "@/components/shared/FicheTabs";
 import { EditeurStages } from "@/components/stages/EditeurStages";
 import { db } from "@/lib/db";
@@ -15,6 +20,7 @@ import {
   changerVisibilite,
   deleteStage,
   enregistrerStage,
+  demanderTemoignageAdmin,
   enregistrerTemoignages,
   updateFiche,
 } from "@/app/admin/actions";
@@ -38,6 +44,8 @@ export default async function EditerFichePage({
   });
 
   if (!fiche) notFound();
+
+  const demandes = await demandesDeLaFiche(fiche.id);
 
   // Sert seulement à dire si un mot de passe existe : il n'est jamais lisible.
   const compte = fiche.userId
@@ -142,10 +150,28 @@ export default async function EditerFichePage({
           />
         }
         temoignages={
-          <TemoignagesManager
-            temoignages={fiche.temoignages}
-            enregistrer={enregistrerTemoignages.bind(null, fiche.id)}
-          />
+          <section className="flex flex-col gap-6">
+            <div>
+              <h2 className="font-serif text-2xl font-semibold">
+                Témoignages
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                On ne les saisit plus à la main : on les demande. La personne
+                reçoit un email au nom de la fiche et écrit elle-même son
+                témoignage. Le transmetteur peut faire la même demande depuis
+                son espace.
+              </p>
+            </div>
+            <DemanderTemoignage
+              stages={fiche.stages.map((s) => ({ id: s.id, titre: s.titre }))}
+              demander={demanderTemoignageAdmin.bind(null, fiche.id)}
+            />
+            <ListeDemandes demandes={demandes} />
+            <TemoignagesManager
+              temoignages={fiche.temoignages}
+              enregistrer={enregistrerTemoignages.bind(null, fiche.id)}
+            />
+          </section>
         }
       />
     </div>

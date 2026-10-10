@@ -26,6 +26,10 @@ import {
   lienConfirmationEmail,
 } from "@/lib/activation";
 import { sendMail } from "@/lib/mailer";
+import {
+  demanderDepuisFormulaire,
+  type EtatDemandeTemoignage,
+} from "@/lib/demandes-temoignage";
 import { envoyerLienReinitialisation } from "@/lib/reinitialisation";
 import {
   enregistrerStage as enregistrerStageEtDates,
@@ -506,4 +510,24 @@ export async function enregistrerTemoignages(
 
   revalidatePath(`/admin/fiches/${transmetteurId}`);
   return { ok: true };
+}
+
+/**
+ * Demande un témoignage au nom d'une fiche, comme le transmetteur peut le
+ * faire depuis son espace : mêmes règles, une seule demande par adresse.
+ */
+export async function demanderTemoignageAdmin(
+  transmetteurId: string,
+  _precedent: EtatDemandeTemoignage,
+  formData: FormData
+): Promise<EtatDemandeTemoignage> {
+  await requireAdmin();
+  const fiche = await db.query.transmetteurs.findFirst({
+    where: eq(transmetteurs.id, transmetteurId),
+    columns: { id: true, nom: true, nomLieu: true, email: true },
+  });
+  if (!fiche) return { ok: false, erreur: "Fiche introuvable.", valeurs: { nom: "", email: "", stageId: "" } };
+  const etat = await demanderDepuisFormulaire(fiche, formData);
+  if (etat?.ok) revalidatePath(`/admin/fiches/${transmetteurId}`);
+  return etat;
 }
